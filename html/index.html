@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>KMapsTree Test</title>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-once/2.1.1/jquery.once.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.13.0/jquery.fancytree-all.js"></script>
+    <script src="../js/bootstrap.js"></script>
+    <script src="../js/jquery.kmapstree.js"></script>
+
+    <link type="text/css" rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css" media="all" />
+    <link type="text/css" rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css" media="all" />
+    <link type="text/css" rel="stylesheet" href="../css/kmapstree.css" media="all" />
+
+<body>
+<!-- BEGIN view section -->
+<section class="view-section">
+    <ul class="nav nav-tabs">
+        <li class="treeview active"><a href=".treeview" data-toggle="tab"><span class="icon shanticon-tree"></span>Tree</a></li>
+        <li class="listview"><a href=".listview" data-toggle="tab"><span class="icon shanticon-list"></span>List</a></li>
+    </ul>
+    <div class="tab-content">
+        <!-- TAB - tree view -->
+        <div class="treeview tab-pane active">
+            <div class="tree view-wrap"><!-- view-wrap controls tree container height --></div>
+        </div>
+        <!-- TAB - list view -->
+        <div class="listview tab-pane">
+            <div id="pager" class="pagination"></div>
+
+            <div class="view-wrap"> <!-- view-wrap controls container height -->
+                <div class="table-responsive">
+                    <table class="table table-condensed table-results">
+                        <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Feature Type</th>
+                        </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                    <div id="pager-header"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</section><!-- END view section -->
+<script>
+    $(function() {
+        $(".tree").kmapsTree({
+//            termindex_root: "a horked value",
+//            kmindex_root: "pistacho"
+            root_id: "places-2"
+        });
+    });
+</script>
+</body>
+</html>
