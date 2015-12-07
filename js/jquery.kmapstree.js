@@ -154,7 +154,7 @@
                         var path = facet_counts[i];
                         var count = facet_counts[i + 1];
                         //console.log(" path: " + path + ": " + count);
-                        countbin[path] = count;
+                        countbin[path] =(count-1);
                     }
 
 
@@ -177,7 +177,7 @@
                         var n =
                         {
                             key: localId,
-                            title: doc.header + " (" + localId + ") (" + countbin[ancestorIdPath] + ")",
+                            title: doc.header + " [" + localId + "] (" + countbin[ancestorIdPath] + ")",
                             parent: parentPath,
                             path: ancestorIdPath,
                             level: doc.level_i,
