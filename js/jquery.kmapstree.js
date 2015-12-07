@@ -18,7 +18,7 @@
         defaults = {
             termindex_root: "http://kidx.shanti.virginia.edu/solr/termindex-dev-update",
             kmindex_root: "http://kidx.shanti.virginia.edu/solr/kmindex-dev",
-            type: "subjects",
+            type: "places",
             baseUrl: "http://subjects.kmaps.virginia.edu/"
         };
 
@@ -35,6 +35,8 @@
         this.init();
     }
 
+
+
     // Avoid Plugin.prototype conflicts
     $.extend(Plugin.prototype, {
         init: function () {
@@ -45,12 +47,12 @@
             // you can add more functions like the one below and
             // call them like so: this.yourOtherFunction(this.element, this.settings).
             var plugin = this;
-            $(this.element).append($("<div>").text(plugin.settings.termindex_root),$("<div>").text(plugin.settings.kmindex_root)) ;
-            $(this.element).fancytree({
+            $(plugin.element).append($("<div>").text(plugin.settings.termindex_root), $("<div>").text(plugin.settings.kmindex_root));
+            $(plugin.element).fancytree({
                 extensions: ["filter", "glyph"],
                 quicksearch: true,
                 checkbox: false,
-                selectMode: 2,
+                selectMode: 3,
                 theme: 'bootstrap',
                 debugLevel: 1,
                 // autoScroll: true,
@@ -61,9 +63,7 @@
                 },
                 activate: function (event, data) {
 
-                    //console.log("ACTIVATE:");
-                    //console.dir(data);
-                    // event.preventDefault();
+                    // need overiddable implementation
                     var listitem = $("td[kid='" + data.node.key + "']");
                     $('.row_selected').removeClass('row_selected');
                     $(listitem).closest('tr').addClass('row_selected');
@@ -72,12 +72,8 @@
                     $(data.node.span).find('#ajax-id-' + data.node.key).trigger('navigate');
                 },
                 createNode: function (event, data) {
-                    //console.log("createNode: " + data.node.span)
-                    //console.dir(data);
-                    data.node.span.childNodes[2].innerHTML = '<span id="ajax-id-' + data.node.key + '">' + data.node.title + '</span>';
 
-                    //console.log("STATUS NODE: " + data.node.isStatusNode());
-                    //data.node.span.childNodes[2].innerHTML = '<span id="ajax-id-' + data.node.key + '">' + data.node.title + '</span>';
+                    data.node.span.childNodes[2].innerHTML = '<span id="ajax-id-' + data.node.key + '">' + data.node.title + '</span>';
                     var path = $.makeArray(data.node.getParentList(false, true).map(function (x) {
                         return x.title;
                     })).join("/");
@@ -135,61 +131,134 @@
                     }
                 },
                 source: {
-                    url: plugin.settings.termindex_root + "/select?wt=json&indent=true&fq=tree%3Asubjects&fl=*&rows=50&q=level_i:1"
+                    url: plugin.buildQuery(plugin.settings.termindex_root, plugin.settings.type, 13735, 1, 2)
                 },
                 postProcess: function (event, data) {
-                    // console.dir(data.response);
+                    //console.log("postProcess!");
+                    //console.log(JSON.stringify(data.response,undefined,2));
+
                     data.result = [];
 
                     var docs = data.response.response.docs;
+                    var facet_counts = data.response.facet_counts.facet_fields.ancestor_id_path;
+                    var rootbin = {};
+                    var countbin = {};
 
-                    $.each(docs, function() {
-                        data.result.push(
-                            {
-                                key: this.id,
-                                title: this.header + "(" + this.id + ")",
-                                path: this.ancestor_id_path,
-                                level: this.level_i,
-                                lazy: true
-                            });
-                    });
+                    //docs.sort(function (a, b) {
+                    //    var aName = a.ancestor_id_path.toLowerCase();
+                    //    var bName = b.ancestor_id_path.toLowerCase();
+                    //    return ((aName < bName) ? -1 : ((aName > bName) ? 1 : 0));
+                    //});
+
+                    for (var i = 0; i < facet_counts.length; i += 2) {
+                        var path = facet_counts[i];
+                        var count = facet_counts[i + 1];
+                        //console.log(" path: " + path + ": " + count);
+                        countbin[path] = count;
+                    }
+
+
+                    //console.log(JSON.stringify(docs));
+                    for (var i = 0; i < docs.length; i++) {
+                        var doc = docs[i];
+                        //console.log(JSON.stringify(doc));
+                        var ancestorIdPath = docs[i].ancestor_id_path;
+                        var pp = ancestorIdPath.split('/');
+                        var localId = ancestorIdPath;
+
+                        if (pp && pp.length != 0) {
+                            localId = pp.pop();
+                        } else {
+                            pp = [];
+                        }
+                        ;
+
+                        var parentPath = pp.join("/");
+                        var n =
+                        {
+                            key: localId,
+                            title: doc.header + " (" + localId + ") (" + countbin[ancestorIdPath] + ")",
+                            parent: parentPath,
+                            path: ancestorIdPath,
+                            level: doc.level_i,
+                            lazy: (countbin[ancestorIdPath]) ? true : false
+                        };
+                        rootbin[ancestorIdPath] = n;  // save for later
+                    }
+
+
+                    //console.log("ROOT BIN");
+                    //console.log(JSON.stringify(rootbin));
+                    var props = Object.getOwnPropertyNames(rootbin);
+                    for (var i = 0; i < props.length; i++) {
+                        var node = rootbin[props[i]];
+                        //console.log("node: " + node.path + "  parent:" + node.parent);
+
+                        if (rootbin[node.parent]) {
+                            var p = rootbin[node.parent];
+                            if (!p.children) {
+                                p.children = []
+                            }
+                            p.children.push(node);
+                            p.lazy = false;
+                            delete rootbin[props[i]];
+                        }
+                    }
+                    var x = Object.getOwnPropertyNames(rootbin);
+                    for (var i = 0; i < x.length; i++) {
+                        data.result.push(rootbin[x[i]]);
+                    }
+                    console.dir(data.result);
                 },
 
-                lazyLoad: function (event,data) {
+                lazyLoad: function (event, data) {
                     var id = data.node.key;
-                    console.dir(data);
+                    var lvla = 1 + data.node.data.level;
+                    var lvlb = 1 + data.node.data.level;
+                    var path = data.node.data.path;
+                    var termIndexRoot = plugin.settings.termindex_root;
+                    var type = plugin.settings.type;
                     data.result = {
-                        url: plugin.settings.termindex_root + "/select?wt=json&indent=true&fq=tree%3Asubjects&fl=*&rows=50&q=ancestor_id_path:" + data.node.data.path + " AND level_i:" + (1+data.node.data.level),
+                        url: plugin.buildQuery(termIndexRoot, type, path, lvla, lvlb)
                     }
                 },
                 focus: function (event, data) {
                     data.node.scrollIntoView(true);
                     data.node.scrollIntoView(true);
                 },
-                create: function(evt,ctx) {
+                create: function (evt, ctx) {
+                    var tree = $(plugin.element).fancytree("getTree");
 
+                    tree.loadKeyPath("13735/13740/13734/1/5324/5904/8607",
+                        function (node, status) {
+                            if (status === "loaded") {
+                                console.log("loaded intermiediate node " + node);
+                            } else if (status === "ok") {
+                                node.activate();
+                            }
+                        });
                 },
 
-                loadChildren: function(evt,ctx) {
+                loadChildren: function (evt, ctx) {
                     var startId = plugin.settings.termindex_root_id;
 
                     if (startId) {
                         //ctx.tree.activateKey(startId);
                         var startNode = ctx.tree.getNodeByKey(startId);
                         if (startNode) {
-                            console.log("autoExpanding node: " + startNode.title + " (" + startNode.key + ")");
+                            //console.log("autoExpanding node: " + startNode.title + " (" + startNode.key + ")");
                             try {
                                 startNode.setExpanded(true);
                                 startNode.makeVisible();
-                            } catch( e ) { console.error ("autoExpand failed: " + e.toString())}
+                            } catch (e) {
+                                console.error ("autoExpand failed: " + e.toString())
+                            }
                         }
                     }
-                    //}
                 },
                 cookieId: "kmaps1tree", // set cookies for search-browse tree, the first fancytree loaded
                 idPrefix: "kmaps1tree"
             });
-
 
             function decorateElementWithPopover(elem, key, title, path, caption) {
                 //console.log("decorateElementWithPopover: "  + elem);
@@ -241,8 +310,8 @@
 
                                 // force the counts to be evaluated as numbers.
                                 var related_count = Number($(xml).find('related_feature_count').text());
-                                var description_count =  Number($(xml).find('description_count').text());
-                                var place_count =  Number($(xml).find('place_count').text());
+                                var description_count = Number($(xml).find('description_count').text());
+                                var place_count = Number($(xml).find('place_count').text());
                                 var picture_count = Number($(xml).find('picture_count').text());
                                 var video_count = Number($(xml).find('video_count').text());
                                 var document_count = Number($(xml).find('document_count').text());
@@ -265,14 +334,14 @@
 
                                 var fq = plugin.settings.solr_filter_query;
 
-                                var project_filter = (fq)?("&" + fq):"";
+                                var project_filter = (fq) ? ("&" + fq) : "";
                                 var kmidxBase = plugin.settings.kmindex_root;
                                 if (!kmidxBase) {
                                     kmidxBase = 'http://kidx.shanti.virginia.edu/solr/kmindex';
                                     console.error("Drupal.settings.shanti_kmaps_admin.shanti_kmaps_admin_server_solr not defined. using default value: " + kmidxBase);
                                 }
                                 var solrURL = kmidxBase + '/select?q=kmapid:' + plugin.settings.type + '-' + key + project_filter + '&start=0&facets=on&group=true&group.field=asset_type&group.facet=true&group.ngroups=true&group.limit=0&wt=json';
-                                console.log ("solrURL = " + solrURL);
+                                //console.log ("solrURL = " + solrURL);
                                 $.get(solrURL, function (json) {
                                     //console.log(json);
                                     var updates = {};
@@ -334,7 +403,6 @@
 
                 }
 
-
                 return elem;
             };
 
@@ -348,7 +416,7 @@
 
                     var element_settings = {
                         url: url,
-                        event:  'navigate',
+                        event: 'navigate',
                         progress: {
                             type: 'throbber'
                         }
@@ -365,10 +433,61 @@
             }
 
 
-
         },
-        yourOtherFunction: function (elem,settings) {
+        yourOtherFunction: function (elem, settings) {
             // some logic
+        },
+        buildQuery: function (termIndexRoot, type, path, lvla, lvlb) {
+
+
+            //console.log("termIndexRoot = " + termIndexRoot  + "\ntype = " + type + "\npath = " + path + "\nlvla  = " + lvla + "\nlvlb = " + lvlb);
+
+            var result =
+                termIndexRoot + "/select?" +
+                "q=ancestor_id_path:" + path +
+                "&wt=json&indent=true&limit=50" +
+                    //"&group=true" +
+                    //"&group.field=level_i" +
+                    //"&group.limit=50" +
+                    //"&fl=header,ancestors,ancestor_id_path,ancestor_ids_default,name" +
+                    //"&sort=level_i+ASC" +
+                    //"&group.sort=ancestor_id_path+ASC";
+                "&facet=true" +
+                "&fl=header,id,ancestor_*,level_i" +
+                "&indent=true" +
+                "&fq=tree:" + type +
+                "&fq=level_i:[" + lvla + "+TO+" + (lvlb + 1) + "]" +
+                "&fq={!tag=hoot}level_i:[" + lvla + "+TO+" + lvlb + "]" +
+                "&facet.mincount=2" +
+                "&facet.limit=-1" +
+                "&sort=level_i+ASC" +
+                "&facet.sort=ancestor_id_path" +
+                "&facet.field={!ex=hoot}ancestor_id_path" +
+                "&wt=json" +
+                "&rows=50";
+            // http://kidx.shanti.virginia.edu/solr/termindex-dev-update/select?q=ancestor_id_path:6403/6325/6330/6683+AND+level_i%3A%5B4+TO+5%5D&wt=json&indent=true&limit=50&group=true&group.field=level_i&group.limit=1&fl=ancestors,ancestor_id_path,ancestor_ids_default,name&sort=level_i%20ASC&group.sort=ancestor_id_path%20ASC
+
+
+            // http://kidx.shanti.virginia.edu/solr/termindex-dev-update/select?
+            // limit=1
+            // &fq=level_i:[1%20TO%20*]
+            // "&fq={!tag=hoot}level_i:[" + lvla + "+TO+" + lvlb + "]" +
+            // &fq=tree%3Asubjects
+            // &fl=header,id,ancestor_*
+            // &rows=50
+            // &q=ancestor_id_path:6403/6325
+            // &facet.field={!ex=hoot}ancestor_id_path
+            // &facet.limit=50
+            // &facet.mincount=2
+            // &wt=json
+            // &facet=true
+            // &indent=true
+            // &facet.pivot.mincount=1
+
+
+            //console.log("buildQuery  ==> " + result);
+
+            return result;
         }
     });
 
