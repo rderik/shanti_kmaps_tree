@@ -23,7 +23,7 @@
         };
 
     // The actual plugin constructor
-    function Plugin(element, options) {
+    function KmapsTreePlugin(element, options) {
         this.element = element;
         // jQuery has an extend method which merges the contents of two or
         // more objects, storing the result in the first object. The first object
@@ -37,8 +37,8 @@
 
 
 
-    // Avoid Plugin.prototype conflicts
-    $.extend(Plugin.prototype, {
+    // Avoid KmapsTreePlugin.prototype conflicts
+    $.extend(KmapsTreePlugin.prototype, {
         init: function () {
             // Place initialization logic here
             // You already have access to the DOM element and
@@ -50,14 +50,16 @@
             $(plugin.element).append($("<div>").text(plugin.settings.termindex_root), $("<div>").text(plugin.settings.kmindex_root));
             $(plugin.element).fancytree({
                 extensions: ["filter", "glyph"],
-                quicksearch: true,
+                generateIds: false,
+                quicksearch: false,
                 checkbox: false,
-                selectMode: 3,
+                selectMode: 2,
                 theme: 'bootstrap',
-                debugLevel: 1,
+                debugLevel: 2,
                 // autoScroll: true,
                 autoScroll: false,
                 filter: {
+                    counter: false,
                     mode: "hide",
                     leavesOnly: false
                 },
@@ -83,21 +85,21 @@
                     var theType = plugin.settings.type;
                     var theTitle = data.node.title;
                     var theCaption = data.node.data.caption;
-
-                    // decorateElementWithPopover(theElem, theKey,theTitle, path,theCaption );
-                    // decorateElemWithDrupalAjax(theElem, theKey, theType);
+                    var theIdPath = data.node.data.path;
+                     decorateElementWithPopover(theElem, theKey,theTitle, theIdPath,theCaption );
+                     decorateElemWithDrupalAjax(theElem, theKey, theType);
 
                     return data;
                 },
                 renderNode: function (event, data) {
-                    data.node.span.childNodes[2].innerHTML = '<span id="ajax-id-' + data.node.key + '">' + data.node.title + '</span>';
+                    data.node.span.childNodes[2].innerHTML = '<span id="ajax-id-' + data.node.key + '">' + data.node.title + ' [' + data.node.path + ']</span>';
                     if (!data.node.isStatusNode()) {
                         data.node.span.childNodes[2].innerHTML = '<span id="ajax-id-' + data.node.key + '">' + data.node.title + '</span>';
                         var path = $.makeArray(data.node.getParentList(false, true).map(function (x) {
                             return x.title;
                         })).join("/");
 
-                        //decorateElementWithPopover(data.node.span, data.node.key,data.node.title, path, data.node.data.caption);
+                        decorateElementWithPopover(data.node.span, data.node.key,data.node.title, data.node.path, data.node.data.caption);
                         $(data.node.span).find('#ajax-id-' + data.node.key).once('nav', function () {
                             var base = $(this).attr('id');
                             var argument = $(this).attr('argument');
@@ -177,7 +179,7 @@
                         var n =
                         {
                             key: localId,
-                            title: doc.header + " [" + localId + "] (" + countbin[ancestorIdPath] + ")",
+                            title: doc.header,
                             parent: parentPath,
                             path: ancestorIdPath,
                             level: doc.level_i,
@@ -227,16 +229,6 @@
                     data.node.scrollIntoView(true);
                 },
                 create: function (evt, ctx) {
-                    var tree = $(plugin.element).fancytree("getTree");
-
-                    tree.loadKeyPath("13735/13740/13734/1/5324/5904/8607",
-                        function (node, status) {
-                            if (status === "loaded") {
-                                console.log("loaded intermiediate node " + node);
-                            } else if (status === "ok") {
-                                node.activate();
-                            }
-                        });
                 },
 
                 loadChildren: function (evt, ctx) {
@@ -257,7 +249,8 @@
                     }
                 },
                 cookieId: "kmaps1tree", // set cookies for search-browse tree, the first fancytree loaded
-                idPrefix: "kmaps1tree"
+                idPrefix: "kmaps1tree",
+
             });
 
             function decorateElementWithPopover(elem, key, title, path, caption) {
@@ -488,7 +481,19 @@
             //console.log("buildQuery  ==> " + result);
 
             return result;
+        },
+        loadKeyPath: function(path,cb) {
+            $("#tree").fancytree("getTree").loadKeyPath(path,cb);
+        },
+        getNodeByKey: function(key,root) {
+            $("#tree").fancytree("getTree").getNodeByKey(key,root);
+        },
+        hideAll: function() {
+            $("#tree").filter( function(x) {
+                return false;
+            })
         }
+
     });
 
     // A really lightweight plugin wrapper around the constructor,
@@ -496,9 +501,37 @@
     $.fn[pluginName] = function (options) {
         return this.each(function () {
             if (!$.data(this, "plugin_" + pluginName)) {
-                $.data(this, "plugin_" + pluginName, new Plugin(this, options));
+                $.data(this, "plugin_" + pluginName, new KmapsTreePlugin(this, options));
             }
         });
     };
+
+    // here we are making functions available outside the plugin.
+
+    $.fn[pluginName].loadKeyPath = function (path, func) {
+        return $("#tree").fancytree("getTree").loadKeyPath(path, func);
+    };
+    $.fn[pluginName].getNodeByKey = function (key, root) {
+        return $("#tree").fancytree("getTree").getNodeByKey(key, root);
+    };
+    $.fn[pluginName].visit = function (func) {
+        return $("#tree").fancytree("getTree").visit(func);
+    };
+
+    $.fn[pluginName].hideAll = function (func) {
+        var tree = $("#tree");
+        tree.filter( function(x) {
+            return false;
+        });
+        return tree;
+    };
+
+    $.fn[pluginName].showPaths = function (paths) {
+        $(paths).each(function() {
+            console.dir(this);
+        });
+    }
+
+
 
 })(jQuery, window, document);

@@ -9,20 +9,24 @@
     <script src="../js/bootstrap.js"></script>
     <script src="../js/jquery.kmapstree.js"></script>
 
-    <link type="text/css" rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css" media="all" />
-    <link type="text/css" rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css" media="all" />
-    <link type="text/css" rel="stylesheet" href="../css/kmapstree.css" media="all" />
+    <link type="text/css" rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"
+          media="all"/>
+    <link type="text/css" rel="stylesheet"
+          href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css" media="all"/>
+    <link type="text/css" rel="stylesheet" href="../css/kmapstree.css" media="all"/>
 
 <body>
 <!-- BEGIN view section -->
 <section class="view-section">
     <ul class="nav nav-tabs">
-        <li class="treeview active"><a href=".treeview" data-toggle="tab"><span class="icon shanticon-tree"></span>Tree</a></li>
-        <li class="listview"><a href=".listview" data-toggle="tab"><span class="icon shanticon-list"></span>List</a></li>
+        <li class="treeview active"><a href=".treeview" data-toggle="tab"><span class="icon shanticon-tree"></span>Tree</a>
+        </li>
+        <li class="listview"><a href=".listview" data-toggle="tab"><span class="icon shanticon-list"></span>List</a>
+        </li>
     </ul>
     <div class="tab-content">
         <!-- TAB - tree view -->
-        <div class="treeview tab-pane active">
+        <div id="tree" class="treeview tab-pane active">
             <div class="tree view-wrap"><!-- view-wrap controls tree container height --></div>
         </div>
         <!-- TAB - list view -->
@@ -46,13 +50,38 @@
         </div>
     </div>
 
+    <div id="zither">
+        <label for="zingo">Path</label><input type="text" id="zingo" /><button id="zoinks">ZOINKS!</button>
+    </div>
+
+
 </section><!-- END view section -->
 <script>
-    $(function() {
-        $(".tree").kmapsTree({
-//            termindex_root: "a horked value",
-//            kmindex_root: "pistacho"
+    $(function () {
+        $("#tree").kmapsTree({
+            //            termindex_root: "a horked value",
+            //            kmindex_root: "pistacho"
             root_id: "places-2"
+        });
+
+        $('#zoinks').click(function () {
+
+            $("#tree").kmapsTree.hideAll().loadKeyPath("/13735/13740/13734/1/5324/5904/8607",
+                    function (node, status) {
+                        console.log(status);
+                        if (status === "loaded") {
+                            console.log("loaded intermediate node " + node);
+                        } else if (status === "ok") {
+                            node.setExpanded(true);
+                            node.makeVisible();
+                        } else if (status === "error") {
+                            console.log("ERROR: " + node);
+                        }
+                    });
+
+            var n = console.dir($("#tree").kmapsTree.getNodeByKey("13740"));
+            console.log("getNodeByKey:");
+            console.dir (n);
         });
     });
 </script>

@@ -4,19 +4,5 @@
     <content url="file://$MODULE_DIR$" />
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module-library">
-      <library name="PHP">
-        <CLASSES>
-          <root url="file:///Applications/MAMP/htdocs/drupal/includes" />
-          <root url="file:///Applications/MAMP/htdocs/drupal/modules" />
-          <root url="file:///Applications/MAMP/htdocs/drupal/sites/all/modules" />
-        </CLASSES>
-        <SOURCES>
-          <root url="file:///Applications/MAMP/htdocs/drupal/includes" />
-          <root url="file:///Applications/MAMP/htdocs/drupal/modules" />
-          <root url="file:///Applications/MAMP/htdocs/drupal/sites/all/modules" />
-        </SOURCES>
-      </library>
-    </orderEntry>
   </component>
 </module>
