@@ -59,6 +59,7 @@
                 // autoScroll: true,
                 autoScroll: false,
                 filter: {
+                    highlight: true,
                     counter: false,
                     mode: "hide",
                     leavesOnly: false
@@ -483,15 +484,17 @@
             return result;
         },
         loadKeyPath: function(path,cb) {
-            $("#tree").fancytree("getTree").loadKeyPath(path,cb);
+            return $("#tree").fancytree("getTree").loadKeyPath(path,cb);
         },
         getNodeByKey: function(key,root) {
-            $("#tree").fancytree("getTree").getNodeByKey(key,root);
+            return $("#tree").fancytree("getTree").getNodeByKey(key,root);
         },
         hideAll: function() {
-            $("#tree").filter( function(x) {
+            var ftree = $("#tree").fancytree("getTree");
+            ftree.filter( function(x) {
                 return false;
-            })
+            });
+            return this;
         }
 
     });
@@ -519,8 +522,8 @@
     };
 
     $.fn[pluginName].hideAll = function (func) {
-        var tree = $("#tree");
-        tree.filter( function(x) {
+        var tree = $("#tree").fancytree("getTree");
+        tree.filterNodes( function(x) {
             return false;
         });
         return tree;

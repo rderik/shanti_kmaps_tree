@@ -13,7 +13,11 @@
           media="all"/>
     <link type="text/css" rel="stylesheet"
           href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css" media="all"/>
+
     <link type="text/css" rel="stylesheet" href="../css/kmapstree.css" media="all"/>
+    <link type="text/css" rel="stylesheet" href="../css/kmapstree.css" media="all"/>
+    <link type="text/css" rel="stylesheet" href="../css/kmapstree.css" media="all"/>
+
 
 <body>
 <!-- BEGIN view section -->
@@ -78,6 +82,13 @@
                             console.log("ERROR: " + node);
                         }
                     });
+
+
+            $("#tree").fancytree("getTree").filterNodes( function(node) {
+                var match = (node.getKeyPath() === "/13735/13740/13734/1/5324/5904/8607");
+                console.log(match + " = " +node.getKeyPath() + " >>> " + "/13735/13740/13734/1/5324/5904/8607" );
+                return match;
+            });
 
             var n = console.dir($("#tree").kmapsTree.getNodeByKey("13740"));
             console.log("getNodeByKey:");
