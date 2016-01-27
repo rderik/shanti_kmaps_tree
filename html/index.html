@@ -55,7 +55,10 @@
     </div>
 
     <div id="zither">
-        <label for="zingo">Path</label><input type="text" id="zingo" /><button id="zoinks">ZOINKS!</button>
+        <label for="zingo">Path</label><input type="text" id="zingo" /><button id="go">Submit!</button>
+    </div>
+    <div id="zoho">
+        <button id="zoinks">Zoinks!</button>
     </div>
 
 
@@ -65,34 +68,17 @@
         $("#tree").kmapsTree({
             //            termindex_root: "a horked value",
             //            kmindex_root: "pistacho"
-            root_id: "places-2"
+            // root_id: "places-2"
         });
 
+
+        $("#go").click(function() {
+            $("#tree").kmapsTree('showPaths',$("#zingo").text());
+        })
+
+
         $('#zoinks').click(function () {
-
-            $("#tree").kmapsTree.hideAll().loadKeyPath("/13735/13740/13734/1/5324/5904/8607",
-                    function (node, status) {
-                        console.log(status);
-                        if (status === "loaded") {
-                            console.log("loaded intermediate node " + node);
-                        } else if (status === "ok") {
-                            node.setExpanded(true);
-                            node.makeVisible();
-                        } else if (status === "error") {
-                            console.log("ERROR: " + node);
-                        }
-                    });
-
-
-            $("#tree").fancytree("getTree").filterNodes( function(node) {
-                var match = (node.getKeyPath() === "/13735/13740/13734/1/5324/5904/8607");
-                console.log(match + " = " +node.getKeyPath() + " >>> " + "/13735/13740/13734/1/5324/5904/8607" );
-                return match;
-            });
-
-            var n = console.dir($("#tree").kmapsTree.getNodeByKey("13740"));
-            console.log("getNodeByKey:");
-            console.dir (n);
+            $("#tree").kmapsTree('showPaths',["/13735/13740","/13735/13740/13734/1/5324/5904/8607","/13735/13740/13734/427/5421/5550/20700"], function() { console.log("showPath callback"); console.dir(arguments)});
         });
     });
 </script>

@@ -35,8 +35,6 @@
         this.init();
     }
 
-
-
     // Avoid KmapsTreePlugin.prototype conflicts
     $.extend(KmapsTreePlugin.prototype, {
         init: function () {
@@ -47,6 +45,7 @@
             // you can add more functions like the one below and
             // call them like so: this.yourOtherFunction(this.element, this.settings).
             var plugin = this;
+            this.element = $(plugin.element);
             $(plugin.element).append($("<div>").text(plugin.settings.termindex_root), $("<div>").text(plugin.settings.kmindex_root));
             $(plugin.element).fancytree({
                 extensions: ["filter", "glyph"],
@@ -66,7 +65,7 @@
                 },
                 activate: function (event, data) {
 
-                    // need overiddable implementation
+                    // overiddable implementation
                     var listitem = $("td[kid='" + data.node.key + "']");
                     $('.row_selected').removeClass('row_selected');
                     $(listitem).closest('tr').addClass('row_selected');
@@ -76,7 +75,7 @@
                 },
                 createNode: function (event, data) {
 
-                    data.node.span.childNodes[2].innerHTML = '<span id="ajax-id-' + data.node.key + '">' + data.node.title + '</span>';
+                    data.node.span.childNodes[2].innerHTML = '<span id="ajax-id-' + data.node.key + '">' + data.node.title + ' ..... ' + data.node.data.path + '</span>';
                     var path = $.makeArray(data.node.getParentList(false, true).map(function (x) {
                         return x.title;
                     })).join("/");
@@ -89,7 +88,6 @@
                     var theIdPath = data.node.data.path;
                      decorateElementWithPopover(theElem, theKey,theTitle, theIdPath,theCaption );
                      decorateElemWithDrupalAjax(theElem, theKey, theType);
-
                     return data;
                 },
                 renderNode: function (event, data) {
@@ -433,19 +431,12 @@
         },
         buildQuery: function (termIndexRoot, type, path, lvla, lvlb) {
 
-
             //console.log("termIndexRoot = " + termIndexRoot  + "\ntype = " + type + "\npath = " + path + "\nlvla  = " + lvla + "\nlvlb = " + lvlb);
 
             var result =
                 termIndexRoot + "/select?" +
                 "q=ancestor_id_path:" + path +
                 "&wt=json&indent=true&limit=50" +
-                    //"&group=true" +
-                    //"&group.field=level_i" +
-                    //"&group.limit=50" +
-                    //"&fl=header,ancestors,ancestor_id_path,ancestor_ids_default,name" +
-                    //"&sort=level_i+ASC" +
-                    //"&group.sort=ancestor_id_path+ASC";
                 "&facet=true" +
                 "&fl=header,id,ancestor_*,level_i" +
                 "&indent=true" +
@@ -459,81 +450,96 @@
                 "&facet.field={!ex=hoot}ancestor_id_path" +
                 "&wt=json" +
                 "&rows=50";
-            // http://kidx.shanti.virginia.edu/solr/termindex-dev-update/select?q=ancestor_id_path:6403/6325/6330/6683+AND+level_i%3A%5B4+TO+5%5D&wt=json&indent=true&limit=50&group=true&group.field=level_i&group.limit=1&fl=ancestors,ancestor_id_path,ancestor_ids_default,name&sort=level_i%20ASC&group.sort=ancestor_id_path%20ASC
 
-
-            // http://kidx.shanti.virginia.edu/solr/termindex-dev-update/select?
-            // limit=1
-            // &fq=level_i:[1%20TO%20*]
-            // "&fq={!tag=hoot}level_i:[" + lvla + "+TO+" + lvlb + "]" +
-            // &fq=tree%3Asubjects
-            // &fl=header,id,ancestor_*
-            // &rows=50
-            // &q=ancestor_id_path:6403/6325
-            // &facet.field={!ex=hoot}ancestor_id_path
-            // &facet.limit=50
-            // &facet.mincount=2
-            // &wt=json
-            // &facet=true
-            // &indent=true
-            // &facet.pivot.mincount=1
-
-
-            //console.log("buildQuery  ==> " + result);
 
             return result;
         },
-        loadKeyPath: function(path,cb) {
-            return $("#tree").fancytree("getTree").loadKeyPath(path,cb);
+        showPaths: function(paths, hide, cb) {
+            console.log("loadKeyPath " + paths);
+            this.element.fancytree("getTree").loadKeyPath(paths,
+                function (node,state) {
+                    console.log("Terminal callback");
+                    console.dir(node);
+                    console.dir(state);
+                    if (state === "ok") {
+                        var ret = node.tree.filterNodes(function(x) {
+                            return $.inArray(x.getKeyPath(), paths) !== -1;
+                            // unfortunately filterNodes does not implement a callback for when it is done AFAICT
+                        }, { autoExpand: true });
+
+                        console.log("filterNodes returned: " + ret);
+
+                        if (cb) cb();
+                    } else if (state == "loading") {
+                    } else if (state == "loaded") {
+                    } else {
+                        console.error("ERROR: state was " + state  + " for " + node.key) ;
+                        console.dir(arguments);
+                    }
+                }
+            );
         },
         getNodeByKey: function(key,root) {
-            return $("#tree").fancytree("getTree").getNodeByKey(key,root);
+            return this.element.fancytree("getTree").getNodeByKey(key,root);
         },
-        hideAll: function() {
-            var ftree = $("#tree").fancytree("getTree");
+        hideAll: function(cb) {
+            var ftree = this.element.fancytree("getTree");
             ftree.filter( function(x) {
                 return false;
             });
-            return this;
+            cb(ftree);
         }
 
     });
 
-    // A really lightweight plugin wrapper around the constructor,
-    // preventing against multiple instantiations
-    $.fn[pluginName] = function (options) {
-        return this.each(function () {
-            if (!$.data(this, "plugin_" + pluginName)) {
-                $.data(this, "plugin_" + pluginName, new KmapsTreePlugin(this, options));
-            }
-        });
-    };
+    //// A really lightweight plugin wrapper around the constructor,
+    //// preventing against multiple instantiations
+    //$.fn[pluginName] = function (options) {
+    //    return this.each(function () {
+    //        if (!$.data(this, "plugin_" + pluginName)) {
+    //            $.data(this, "plugin_" + pluginName, new KmapsTreePlugin(this, options));
+    //        }
+    //    });
+    //};
 
     // here we are making functions available outside the plugin.
 
-    $.fn[pluginName].loadKeyPath = function (path, func) {
-        return $("#tree").fancytree("getTree").loadKeyPath(path, func);
-    };
-    $.fn[pluginName].getNodeByKey = function (key, root) {
-        return $("#tree").fancytree("getTree").getNodeByKey(key, root);
-    };
-    $.fn[pluginName].visit = function (func) {
-        return $("#tree").fancytree("getTree").visit(func);
-    };
+    //$.fn[pluginName].loadKeyPath = function (path, func) {
+    //    this.loadKeyPath(path, function() {
+    //        console.log("loadKeyPath callback: " + path);
+    //        tree.filterNodes(function (node, func) {
+    //            var match = (node.getKeyPath() === path);
+    //            console.log(match + " = " + node.getKeyPath() + " ? " + path);
+    //            return match;
+    //        });
+    //    });
+    //};
 
-    $.fn[pluginName].hideAll = function (func) {
-        var tree = $("#tree").fancytree("getTree");
-        tree.filterNodes( function(x) {
-            return false;
-        });
-        return tree;
-    };
+    // See https://github.com/jquery-boilerplate/jquery-boilerplate/wiki/Extending-jQuery-Boilerplate
+    $.fn[pluginName] = function (options) {
+        var args = arguments;
 
-    $.fn[pluginName].showPaths = function (paths) {
-        $(paths).each(function() {
-            console.dir(this);
-        });
-    }
+        if (options === undefined || typeof options === 'object') {
+            return this.each(function () {
+                if (!$.data(this, 'plugin_' + pluginName)) {
+                    $.data(this, 'plugin_' + pluginName, new KmapsTreePlugin(this, options));
+                }
+            });
+        } else if (typeof options === 'string' && options[0] !== '_' && options !== 'init') {
+            var returns;
+
+            this.each(function () {
+                var instance = $.data(this, 'plugin_' + pluginName);
+                if (instance instanceof KmapsTreePlugin && typeof instance[options] === 'function') {
+                    returns = instance[options].apply(instance, Array.prototype.slice.call(args, 1));
+                }
+                if (options === 'destroy') {
+                    $.data(this, 'plugin_' + pluginName, null);
+                }
+            });
+            return returns !== undefined ? returns : this;
+        }
+    };
 
 
 
