@@ -19,6 +19,7 @@
             termindex_root: "http://kidx.shanti.virginia.edu/solr/termindex-dev-update",
             kmindex_root: "http://kidx.shanti.virginia.edu/solr/kmindex-dev",
             type: "places",
+            root_kmapid: 13735,
             baseUrl: "http://subjects.kmaps.virginia.edu/"
         };
 
@@ -132,7 +133,7 @@
                     }
                 },
                 source: {
-                    url: plugin.buildQuery(plugin.settings.termindex_root, plugin.settings.type, 13735, 1, 2)
+                    url: plugin.buildQuery(plugin.settings.termindex_root, plugin.settings.type, plugin.settings.root_kmapid, 1, 2)
                 },
                 postProcess: function (event, data) {
                     //console.log("postProcess!");
