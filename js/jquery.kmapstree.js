@@ -102,7 +102,7 @@
                         $(data.node.span).find('#ajax-id-' + data.node.key).once('nav', function () {
                             var base = $(this).attr('id');
                             var argument = $(this).attr('argument');
-                            var url = location.origin + location.pathname.substring(0, location.pathname.indexOf(plugin.settings.type)) + settings.type + '/' + data.node.key + '/overview/nojs';
+                            var url = location.origin + location.pathname.substring(0, location.pathname.indexOf(plugin.settings.type)) + plugin.settings.type + '/' + data.node.key + '/overview/nojs';
                             Drupal.ajax[base] = new Drupal.ajax(base, this, {
                                 url: url,
                                 event: 'navigate',
@@ -209,7 +209,7 @@
                     for (var i = 0; i < x.length; i++) {
                         data.result.push(rootbin[x[i]]);
                     }
-                    console.dir(data.result);
+                    //console.dir(data.result);
                 },
 
                 lazyLoad: function (event, data) {
@@ -458,9 +458,9 @@
             console.log("loadKeyPath " + paths);
             this.element.fancytree("getTree").loadKeyPath(paths,
                 function (node,state) {
-                    console.log("Terminal callback");
-                    console.dir(node);
-                    console.dir(state);
+                    //console.log("Terminal callback");
+                    //console.dir(node);
+                    //console.dir(state);
                     if (state === "ok") {
                         var ret = node.tree.filterNodes(function(x) {
                             return $.inArray(x.getKeyPath(), paths) !== -1;
@@ -474,7 +474,7 @@
                     } else if (state == "loaded") {
                     } else {
                         console.error("ERROR: state was " + state  + " for " + node.key) ;
-                        console.dir(arguments);
+                        //console.dir(arguments);
                     }
                 }
             );
