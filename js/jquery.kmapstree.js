@@ -13,6 +13,8 @@
     // as this (slightly) quickens the resolution process and can be more efficiently
     // minified (especially when both are regularly referenced in your plugin).
 
+    const debug = false;
+
     // Create the defaults once
     var pluginName = "kmapsTree",
         defaults = {
@@ -22,6 +24,9 @@
             root_kmapid: 13735,
             baseUrl: "http://subjects.kmaps.virginia.edu/"
         };
+
+
+
 
     // The actual plugin constructor
     function KmapsTreePlugin(element, options) {
@@ -136,7 +141,7 @@
                     url: plugin.buildQuery(plugin.settings.termindex_root, plugin.settings.type, plugin.settings.root_kmapid, 1, 2)
                 },
                 postProcess: function (event, data) {
-                    //console.log("postProcess!");
+                    if (debug) console.log("postProcess!");
                     //console.log(JSON.stringify(data.response,undefined,2));
 
                     data.result = [];
@@ -155,15 +160,15 @@
                     for (var i = 0; i < facet_counts.length; i += 2) {
                         var path = facet_counts[i];
                         var count = facet_counts[i + 1];
-                        //console.log(" path: " + path + ": " + count);
+                        //if (debug) console.log(" path: " + path + ": " + count);
                         countbin[path] =(count-1);
                     }
 
 
-                    //console.log(JSON.stringify(docs));
+                    //if (debug) console.log(JSON.stringify(docs));
                     for (var i = 0; i < docs.length; i++) {
                         var doc = docs[i];
-                        //console.log(JSON.stringify(doc));
+                        //if (debug) console.log(JSON.stringify(doc));
                         var ancestorIdPath = docs[i].ancestor_id_path;
                         var pp = ancestorIdPath.split('/');
                         var localId = ancestorIdPath;
@@ -189,12 +194,12 @@
                     }
 
 
-                    //console.log("ROOT BIN");
-                    //console.log(JSON.stringify(rootbin));
+                    //if (debug) console.log("ROOT BIN");
+                    //if (debug) console.log(JSON.stringify(rootbin));
                     var props = Object.getOwnPropertyNames(rootbin);
                     for (var i = 0; i < props.length; i++) {
                         var node = rootbin[props[i]];
-                        //console.log("node: " + node.path + "  parent:" + node.parent);
+                        //if (debug) console.log("node: " + node.path + "  parent:" + node.parent);
 
                         if (rootbin[node.parent]) {
                             var p = rootbin[node.parent];
@@ -238,7 +243,7 @@
                         //ctx.tree.activateKey(startId);
                         var startNode = ctx.tree.getNodeByKey(startId);
                         if (startNode) {
-                            //console.log("autoExpanding node: " + startNode.title + " (" + startNode.key + ")");
+                            //if (debug) console.log("autoExpanding node: " + startNode.title + " (" + startNode.key + ")");
                             try {
                                 startNode.setExpanded(true);
                                 startNode.makeVisible();
@@ -254,18 +259,18 @@
             });
 
             function decorateElementWithPopover(elem, key, title, path, caption) {
-                //console.log("decorateElementWithPopover: "  + elem);
+                //if (debug) console.log("decorateElementWithPopover: "  + elem);
                 if (jQuery(elem).popover) {
                     jQuery(elem).attr('rel', 'popover');
 
-                    //console.log("caption = " + caption);
+                    //if (debug) console.log("caption = " + caption);
                     jQuery(elem).popover({
                             html: true,
                             content: function () {
                                 caption = ((caption) ? caption : "");
                                 var popover = "<div class='kmap-path'>/" + path + "</div>" + "<div class='kmap-caption'>" + caption + "</div>" +
                                     "<div class='info-wrap' id='infowrap" + key + "'><div class='counts-display'>...</div></div>";
-                                //console.log("Captioning: " + caption);
+                                //if (debug) console.log("Captioning: " + caption);
                                 return popover;
                             },
                             title: function () {
@@ -334,9 +339,9 @@
                                     console.error("Drupal.settings.shanti_kmaps_admin.shanti_kmaps_admin_server_solr not defined. using default value: " + kmidxBase);
                                 }
                                 var solrURL = kmidxBase + '/select?q=kmapid:' + plugin.settings.type + '-' + key + project_filter + '&start=0&facets=on&group=true&group.field=asset_type&group.facet=true&group.ngroups=true&group.limit=0&wt=json';
-                                //console.log ("solrURL = " + solrURL);
+                                //if (debug) console.log ("solrURL = " + solrURL);
                                 $.get(solrURL, function (json) {
-                                    //console.log(json);
+                                    //if (debug) console.log(json);
                                     var updates = {};
                                     var data = JSON.parse(json);
                                     $.each(data.grouped.asset_type.groups, function (x, y) {
@@ -400,9 +405,9 @@
             };
 
             function decorateElemWithDrupalAjax(theElem, theKey, theType) {
-                //console.log("decorateElementWithDrupalAjax: "  + $(theElem).html());
+                //if (debug) console.log("decorateElementWithDrupalAjax: "  + $(theElem).html());
                 $(theElem).once('nav', function () {
-                    //console.log("applying click handling to " + $(this).html());
+                    //if (debug) console.log("applying click handling to " + $(this).html());
                     var base = $(this).attr('id') || "ajax-wax-" + theKey;
                     var argument = $(this).attr('argument');
                     var url = location.origin + location.pathname.substring(0, location.pathname.indexOf(theType)) + theType + '/' + theKey + '/overview/nojs';
@@ -415,11 +420,11 @@
                         }
                     };
 
-                    // console.log("Adding to ajax to " + base);
+                    // if (debug) console.log("Adding to ajax to " + base);
 
                     Drupal.ajax[base] = new Drupal.ajax(base, this, element_settings);
                     //this.click(function () {
-                    //    console.log("pushing state for " + url);
+                    //    if (debug) console.log("pushing state for " + url);
                     //    window.history.pushState({tag: true}, null, url);
                     //});
                 });
@@ -432,7 +437,7 @@
         },
         buildQuery: function (termIndexRoot, type, path, lvla, lvlb) {
 
-            //console.log("termIndexRoot = " + termIndexRoot  + "\ntype = " + type + "\npath = " + path + "\nlvla  = " + lvla + "\nlvlb = " + lvlb);
+            //if (debug) console.log("termIndexRoot = " + termIndexRoot  + "\ntype = " + type + "\npath = " + path + "\nlvla  = " + lvla + "\nlvlb = " + lvlb);
 
             var result =
                 termIndexRoot + "/select?" +
@@ -459,13 +464,14 @@
 
 
 
-            // console.log("loadKeyPath " + paths);
-            console.dir(paths);
+            // if (debug) console.log("loadKeyPath " + paths);
+
+            if (debug) console.dir(paths);
 
             if (paths !== null) {
                 this.element.fancytree("getTree").loadKeyPath(paths,
                     function (node, state) {
-                        console.log("Terminal callback");
+                        if (debug) console.log("Terminal callback");
                         console.dir(node);
                         console.dir(state);
 
@@ -479,11 +485,11 @@
                                 return $.inArray(x.getKeyPath(), paths) !== -1;
                                 // unfortunately filterNodes does not implement a callback for when it is done AFAICT
                             }, {autoExpand: true});
-                            console.log("filterNodes returned: " + ret);
+                            if (debug) console.log("filterNodes returned: " + ret);
                         } else if (state == "loading") {
-                            console.log("loading " + node);
+                            if (debug) console.log("loading " + node);
                         } else if (state == "loaded") {
-                            console.log("loaded" + node);
+                            if (debug) console.log("loaded" + node);
                         } else {
                             console.error("ERROR: state was " + state + " for " + node.key);
                             console.dir(arguments);
@@ -495,7 +501,7 @@
                     // The logic here is not DRY, so will need to refactor.
 
                     function () {
-                        console.log("Calling back! ");
+                        if (debug) console.log("Calling back! ");
                         console.dir(arguments);
                         if (callback) callback();
                     }
@@ -531,10 +537,10 @@
 
     //$.fn[pluginName].loadKeyPath = function (path, func) {
     //    this.loadKeyPath(path, function() {
-    //        console.log("loadKeyPath callback: " + path);
+    //        if (debug) console.log("loadKeyPath callback: " + path);
     //        tree.filterNodes(function (node, func) {
     //            var match = (node.getKeyPath() === path);
-    //            console.log(match + " = " + node.getKeyPath() + " ? " + path);
+    //            if (debug) console.log(match + " = " + node.getKeyPath() + " ? " + path);
     //            return match;
     //        });
     //    });
