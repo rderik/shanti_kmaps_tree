@@ -46,7 +46,7 @@
             // call them like so: this.yourOtherFunction(this.element, this.settings).
             var plugin = this;
             this.element = $(plugin.element);
-            $(plugin.element).append($("<div>").text(plugin.settings.termindex_root), $("<div>").text(plugin.settings.kmindex_root));
+            // $(plugin.element).append($("<div>").text(plugin.settings.termindex_root), $("<div>").text(plugin.settings.kmindex_root));
             $(plugin.element).fancytree({
                 extensions: ["filter", "glyph"],
                 generateIds: false,
@@ -86,7 +86,7 @@
                     var theTitle = data.node.title;
                     var theCaption = data.node.data.caption;
                     var theIdPath = data.node.data.path;
-                     decorateElementWithPopover(theElem, theKey,theTitle, theIdPath,theCaption );
+                    // decorateElementWithPopover(theElem, theKey,theTitle, theIdPath,theCaption );
                      decorateElemWithDrupalAjax(theElem, theKey, theType);
                     return data;
                 },
@@ -98,7 +98,7 @@
                             return x.title;
                         })).join("/");
 
-                        decorateElementWithPopover(data.node.span, data.node.key,data.node.title, data.node.path, data.node.data.caption);
+                        // decorateElementWithPopover(data.node.span, data.node.key,data.node.title, data.node.path, data.node.data.caption);
                         $(data.node.span).find('#ajax-id-' + data.node.key).once('nav', function () {
                             var base = $(this).attr('id');
                             var argument = $(this).attr('argument');
@@ -454,30 +454,51 @@
 
             return result;
         },
-        showPaths: function(paths, hide, cb) {
-            console.log("loadKeyPath " + paths);
-            this.element.fancytree("getTree").loadKeyPath(paths,
-                function (node,state) {
-                    console.log("Terminal callback");
-                    console.dir(node);
-                    console.dir(state);
-                    if (state === "ok") {
-                        var ret = node.tree.filterNodes(function(x) {
-                            return $.inArray(x.getKeyPath(), paths) !== -1;
-                            // unfortunately filterNodes does not implement a callback for when it is done AFAICT
-                        }, { autoExpand: true });
+        showPaths: function(paths, callback) {
 
-                        console.log("filterNodes returned: " + ret);
 
-                        if (cb) cb();
-                    } else if (state == "loading") {
-                    } else if (state == "loaded") {
-                    } else {
-                        console.error("ERROR: state was " + state  + " for " + node.key) ;
-                        console.dir(arguments);
+
+            // console.log("loadKeyPath " + paths);
+            console.dir(paths);
+
+            if (paths !== null) {
+                this.element.fancytree("getTree").loadKeyPath(paths,
+                    function (node, state) {
+                        console.log("Terminal callback");
+                        console.dir(node);
+                        console.dir(state);
+
+                        if (node === null) {
+                            console.error("HEY NODE IS NULL");
+                            console.error("paths = " + JSON.stringify(paths));
+                        }
+
+                        if (state === "ok") {
+                            var ret = node.tree.filterNodes(function (x) {
+                                return $.inArray(x.getKeyPath(), paths) !== -1;
+                                // unfortunately filterNodes does not implement a callback for when it is done AFAICT
+                            }, {autoExpand: true});
+                            console.log("filterNodes returned: " + ret);
+                        } else if (state == "loading") {
+                            console.log("loading " + node);
+                        } else if (state == "loaded") {
+                            console.log("loaded" + node);
+                        } else {
+                            console.error("ERROR: state was " + state + " for " + node.key);
+                            console.dir(arguments);
+                        }
+
                     }
-                }
-            );
+                ).always(
+                    function () {
+                        console.log("Calling back! ");
+                        console.dir(arguments);
+                        if (callback) callback();
+                    }
+                );
+            } else {
+                if (callback) callback();
+            }
         },
         getNodeByKey: function(key,root) {
             return this.element.fancytree("getTree").getNodeByKey(key,root);
