@@ -19,6 +19,7 @@
             termindex_root: "http://kidx.shanti.virginia.edu/solr/termindex-dev-update",
             kmindex_root: "http://kidx.shanti.virginia.edu/solr/kmindex-dev",
             type: "places",
+            root_kmapid: 13735,
             baseUrl: "http://subjects.kmaps.virginia.edu/"
         };
 
@@ -102,7 +103,7 @@
                         $(data.node.span).find('#ajax-id-' + data.node.key).once('nav', function () {
                             var base = $(this).attr('id');
                             var argument = $(this).attr('argument');
-                            var url = location.origin + location.pathname.substring(0, location.pathname.indexOf(plugin.settings.type)) + settings.type + '/' + data.node.key + '/overview/nojs';
+                            var url = location.origin + location.pathname.substring(0, location.pathname.indexOf(plugin.settings.type)) + plugin.settings.type + '/' + data.node.key + '/overview/nojs';
                             Drupal.ajax[base] = new Drupal.ajax(base, this, {
                                 url: url,
                                 event: 'navigate',
@@ -132,7 +133,7 @@
                     }
                 },
                 source: {
-                    url: plugin.buildQuery(plugin.settings.termindex_root, plugin.settings.type, 13735, 1, 2)
+                    url: plugin.buildQuery(plugin.settings.termindex_root, plugin.settings.type, plugin.settings.root_kmapid, 1, 2)
                 },
                 postProcess: function (event, data) {
                     //console.log("postProcess!");
@@ -209,7 +210,7 @@
                     for (var i = 0; i < x.length; i++) {
                         data.result.push(rootbin[x[i]]);
                     }
-                    console.dir(data.result);
+                    //console.dir(data.result);
                 },
 
                 lazyLoad: function (event, data) {
@@ -490,6 +491,9 @@
 
                     }
                 ).always(
+
+                    // The logic here is not DRY, so will need to refactor.
+
                     function () {
                         console.log("Calling back! ");
                         console.dir(arguments);
