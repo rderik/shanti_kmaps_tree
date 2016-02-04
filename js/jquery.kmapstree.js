@@ -13,7 +13,7 @@
     // as this (slightly) quickens the resolution process and can be more efficiently
     // minified (especially when both are regularly referenced in your plugin).
 
-    const debug = false;
+    var debug = false;
 
     // Create the defaults once
     var pluginName = "kmapsTree",
