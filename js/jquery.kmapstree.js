@@ -26,8 +26,6 @@
         };
 
 
-
-
     // The actual plugin constructor
     function KmapsTreePlugin(element, options) {
         this.element = element;
@@ -41,7 +39,9 @@
         this.init();
     }
 
-    // Avoid KmapsTreePlugin.prototype conflicts
+
+
+
     $.extend(KmapsTreePlugin.prototype, {
         init: function () {
             // Place initialization logic here
@@ -53,6 +53,10 @@
             var plugin = this;
             this.element = $(plugin.element);
             // $(plugin.element).append($("<div>").text(plugin.settings.termindex_root), $("<div>").text(plugin.settings.kmindex_root));
+
+            //
+            // Fancytree plugin
+            //
             $(plugin.element).fancytree({
                 extensions: ["filter", "glyph"],
                 generateIds: false,
@@ -60,7 +64,7 @@
                 checkbox: false,
                 selectMode: 2,
                 theme: 'bootstrap',
-                debugLevel: 2,
+                debugLevel: 0,
                 // autoScroll: true,
                 autoScroll: false,
                 filter: {
@@ -69,16 +73,31 @@
                     mode: "hide",
                     leavesOnly: false
                 },
-                activate: function (event, data) {
-
-                    // overiddable implementation
-                    var listitem = $("td[kid='" + data.node.key + "']");
-                    $('.row_selected').removeClass('row_selected');
-                    $(listitem).closest('tr').addClass('row_selected');
-
-                    var url = location.origin + location.pathname.substring(0, location.pathname.indexOf(plugin.settings.type)) + plugin.settings.type + '/' + data.node.key + '/overview/nojs';
-                    $(data.node.span).find('#ajax-id-' + data.node.key).trigger('navigate');
+                cookieId: "kmaps1tree",   //  TODO: Needs to be a unique value per instance!
+                idPrefix: "kmaps1tree",   //  TODO: Needs to be a unique value per instance!
+                source: {
+                    url: plugin.buildQuery(plugin.settings.termindex_root, plugin.settings.type, plugin.settings.root_kmapid, 1, 2)
                 },
+
+                // User Event Handlers
+
+                select: function(event, data) {
+                    plugin.logEvent(event, data);
+                },
+                focus: function (event, data) {
+                    data.node.scrollIntoView(true);
+                    plugin.logEvent(event, data);
+                },
+                keydown: function (event, data) {
+                    plugin.logEvent(event, data);
+                },
+                activate: function(event, data) {
+                    plugin.logEvent(event, data);
+                },
+
+                //
+                // Fancytree building Event Handlers
+                //
                 createNode: function (event, data) {
 
                     data.node.span.childNodes[2].innerHTML = '<span id="ajax-id-' + data.node.key + '">' + data.node.title + ' ..... ' + data.node.data.path + '</span>';
@@ -121,29 +140,9 @@
 
                     return data;
                 },
-                glyph: {
-                    map: {
-                        doc: "",
-                        docOpen: "",
-                        error: "glyphicon glyphicon-warning-sign",
-                        expanderClosed: "glyphicon glyphicon-plus-sign",
-                        expanderLazy: "glyphicon glyphicon-plus-sign",
-                        // expanderLazy: "glyphicon glyphicon-expand",
-                        expanderOpen: "glyphicon glyphicon-minus-sign",
-                        // expanderOpen: "glyphicon glyphicon-collapse-down",
-                        folder: "",
-                        folderOpen: "",
-                        loading: "glyphicon glyphicon-refresh"
-                        //              loading: "icon-spinner icon-spin"
-                    }
-                },
-                source: {
-                    url: plugin.buildQuery(plugin.settings.termindex_root, plugin.settings.type, plugin.settings.root_kmapid, 1, 2)
-                },
+
                 postProcess: function (event, data) {
                     if (debug) console.log("postProcess!");
-                    //console.log(JSON.stringify(data.response,undefined,2));
-
                     data.result = [];
 
                     var docs = data.response.response.docs;
@@ -151,24 +150,20 @@
                     var rootbin = {};
                     var countbin = {};
 
-                    //docs.sort(function (a, b) {
-                    //    var aName = a.ancestor_id_path.toLowerCase();
-                    //    var bName = b.ancestor_id_path.toLowerCase();
-                    //    return ((aName < bName) ? -1 : ((aName > bName) ? 1 : 0));
-                    //});
+                    docs.sort(function (a, b) {
+                        var aName = a.ancestor_id_path.toLowerCase();
+                        var bName = b.ancestor_id_path.toLowerCase();
+                        return ((aName < bName) ? -1 : ((aName > bName) ? 1 : 0));
+                    });
 
                     for (var i = 0; i < facet_counts.length; i += 2) {
                         var path = facet_counts[i];
                         var count = facet_counts[i + 1];
-                        //if (debug) console.log(" path: " + path + ": " + count);
                         countbin[path] =(count-1);
                     }
 
-
-                    //if (debug) console.log(JSON.stringify(docs));
                     for (var i = 0; i < docs.length; i++) {
                         var doc = docs[i];
-                        //if (debug) console.log(JSON.stringify(doc));
                         var ancestorIdPath = docs[i].ancestor_id_path;
                         var pp = ancestorIdPath.split('/');
                         var localId = ancestorIdPath;
@@ -178,7 +173,6 @@
                         } else {
                             pp = [];
                         }
-                        ;
 
                         var parentPath = pp.join("/");
                         var n =
@@ -229,10 +223,24 @@
                         url: plugin.buildQuery(termIndexRoot, type, path, lvla, lvlb)
                     }
                 },
-                focus: function (event, data) {
-                    data.node.scrollIntoView(true);
-                    data.node.scrollIntoView(true);
+
+                glyph: {
+                    map: {
+                        doc: "",
+                        docOpen: "",
+                        error: "glyphicon glyphicon-warning-sign",
+                        expanderClosed: "glyphicon glyphicon-plus-sign",
+                        expanderLazy: "glyphicon glyphicon-plus-sign",
+                        // expanderLazy: "glyphicon glyphicon-expand",
+                        expanderOpen: "glyphicon glyphicon-minus-sign",
+                        // expanderOpen: "glyphicon glyphicon-collapse-down",
+                        folder: "",
+                        folderOpen: "",
+                        loading: "glyphicon glyphicon-refresh"
+                        //              loading: "icon-spinner icon-spin"
+                    }
                 },
+
                 create: function (evt, ctx) {
                 },
 
@@ -252,9 +260,7 @@
                             }
                         }
                     }
-                },
-                cookieId: "kmaps1tree", // set cookies for search-browse tree, the first fancytree loaded
-                idPrefix: "kmaps1tree",
+                }
 
             });
 
@@ -519,6 +525,18 @@
                 return false;
             });
             cb(ftree);
+        },
+
+        // Utility Functions
+        logEvent: function (event, data) {
+            var kmapid = this.settings.type + "-" + data.node.key;
+            var path = "/" + data.node.data.path;
+            var origEvent = (event.originalEvent)?event.originalEvent.type:"none";
+            console.dir(event);
+            //console.dir(data);
+            console.log("Event Type: " + event.type + ":" + origEvent + " Name: " + data.node.title + " KMapID: " + kmapid + " PATH: " + path);
+            // console.log("DATA: " + JSON.stringify(data.node.data) );
+            // $.trigger(this, "oink", );
         }
 
     });
