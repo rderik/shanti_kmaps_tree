@@ -13,7 +13,7 @@
     // as this (slightly) quickens the resolution process and can be more efficiently
     // minified (especially when both are regularly referenced in your plugin).
 
-    var debug = false;
+    var debug=true;
 
     // Create the defaults once
     var pluginName = "kmapsTree",
@@ -80,19 +80,18 @@
                 },
 
                 // User Event Handlers
-
                 select: function(event, data) {
-                    plugin.logEvent(event, data);
+                    plugin.sendEvent("SELECT",event, data);
                 },
                 focus: function (event, data) {
                     data.node.scrollIntoView(true);
-                    plugin.logEvent(event, data);
+                    plugin.sendEvent("FOCUS",event, data);
                 },
                 keydown: function (event, data) {
-                    plugin.logEvent(event, data);
+                    plugin.sendEvent("KEYDOWN",event, data);
                 },
                 activate: function(event, data) {
-                    plugin.logEvent(event, data);
+                    plugin.sendEvent("ACTIVATE",event, data);
                 },
 
                 //
@@ -116,9 +115,8 @@
                     return data;
                 },
                 renderNode: function (event, data) {
-                    data.node.span.childNodes[2].innerHTML = '<span id="ajax-id-' + data.node.key + '">' + data.node.title + ' [' + data.node.path + ']</span>';
                     if (!data.node.isStatusNode()) {
-                        data.node.span.childNodes[2].innerHTML = '<span id="ajax-id-' + data.node.key + '">' + data.node.title + '</span>';
+                        data.node.span.childNodes[2].innerHTML = '<span id="ajax-id-' + data.node.key + '">' + data.node.title + ' [' + data.node.key + ']</span>';
                         var path = $.makeArray(data.node.getParentList(false, true).map(function (x) {
                             return x.title;
                         })).join("/");
@@ -487,7 +485,10 @@
                         }
 
                         if (state === "ok") {
+
+                            if (debug) console.log("ok " + node);
                             var ret = node.tree.filterNodes(function (x) {
+                                if (debug) console.log( "     filt:" + x.getKeyPath());
                                 return $.inArray(x.getKeyPath(), paths) !== -1;
                                 // unfortunately filterNodes does not implement a callback for when it is done AFAICT
                             }, {autoExpand: true});
@@ -497,8 +498,7 @@
                         } else if (state == "loaded") {
                             if (debug) console.log("loaded" + node);
                         } else {
-                            console.error("ERROR: state was " + state + " for " + node.key);
-                            console.dir(arguments);
+                            console.error("ERROR: state was " + state + " for " + node );
                         }
 
                     }
@@ -528,15 +528,44 @@
         },
 
         // Utility Functions
-        logEvent: function (event, data) {
+        sendEvent: function (handler, event, data) {
+            function encapsulate(eventtype, event,n) {
+                return {
+                    eventtype: eventtype, // "useractivate","codeactivate"
+                    title: n.title,
+                    key: n.key,
+                    path: "/" + n.data.path,
+                    level: n.data.level,
+                    parent: "/" + n.data.parent,
+                    event: event
+                }
+            }
+
+            // console.log("HANDLER:  " + handler);
             var kmapid = this.settings.type + "-" + data.node.key;
             var path = "/" + data.node.data.path;
             var origEvent = (event.originalEvent)?event.originalEvent.type:"none";
-            console.dir(event);
-            //console.dir(data);
-            console.log("Event Type: " + event.type + ":" + origEvent + " Name: " + data.node.title + " KMapID: " + kmapid + " PATH: " + path);
-            // console.log("DATA: " + JSON.stringify(data.node.data) );
-            // $.trigger(this, "oink", );
+            var keyCode = "";
+            if (event.keyCode) {
+                keyCode = "(" + event.keyCode  + ")";
+            }
+            if (event.type === "fancytreeactivate" && origEvent === "click") {
+                // This was a user click
+                console.error("USER CLICKED: " + data.node.title);
+                $(this.element).trigger("useractivate", encapsulate("useractivate",event,data.node));
+            } else if (event.type === "fancytreekeydown" && origEvent === "keydown") {
+                // This was a user arrow key (or return....)
+                console.error("USER KEYED: " + data.node.tree.getActiveNode() + " with " + event.keyCode);
+                $(this.element).trigger("useractivate", encapsulate("useractivate",event, data.node.tree.getActiveNode()));
+            } else if (event.type === "fancytreefocus" && origEvent === "none") {
+                // console.error("FOCUS: " + data.node.title);
+            } else if (event.type === "fancytreeactivate" && origEvent === "none") {
+                // console.error("ACTIVATE: " + data.node.title);
+                 $(this.element).trigger("activate", encapsulate("codeactivate",event,data.node.tree.getActiveNode()));
+            } else {
+                console.log("UNHANDLED EVENT: " + event);
+                console.dir(event);
+            }
         }
 
     });
