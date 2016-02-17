@@ -13,7 +13,8 @@
     // as this (slightly) quickens the resolution process and can be more efficiently
     // minified (especially when both are regularly referenced in your plugin).
 
-    var debug=true;
+    const SOLRLIMIT = 2000;
+    var debug=false;
 
     // Create the defaults once
     var pluginName = "kmapsTree",
@@ -443,10 +444,11 @@
 
             //if (debug) console.log("termIndexRoot = " + termIndexRoot  + "\ntype = " + type + "\npath = " + path + "\nlvla  = " + lvla + "\nlvlb = " + lvlb);
 
+
             var result =
                 termIndexRoot + "/select?" +
                 "q=ancestor_id_path:" + path +
-                "&wt=json&indent=true&limit=50" +
+                "&wt=json&indent=true&limit=" + SOLRLIMIT +
                 "&facet=true" +
                 "&fl=header,id,ancestor_*,level_i" +
                 "&indent=true" +
