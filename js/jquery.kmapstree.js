@@ -478,8 +478,8 @@
                 this.element.fancytree("getTree").loadKeyPath(paths,
                     function (node, state) {
                         if (debug) console.log("Terminal callback");
-                        console.dir(node);
-                        console.dir(state);
+                        if (debug) console.dir(node);
+                        if (debug) console.dir(state);
 
                         if (node === null) {
                             console.error("HEY NODE IS NULL");
