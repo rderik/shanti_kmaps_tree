@@ -55,17 +55,20 @@
     </div>
 
     <div id="zither">
-        <label for="zingo">Path</label><select id="zingo">
-            <option value="/13735/13740/13734/427/5284">/13735/13740/13734/427/5284</option>
-            <option value="/13735/13740">B</option>
-            <option value="/13735/13740/13734/1/5324/5904/8607">C</option>
-        <option value="/13735/13740/13734/427/5421/5550/20700">D</option>
-        <option value="/735/13740/13734/427/5421/5550/20700">E</option>
 
-    </select><button id="go">Submit!</button>
+
+        Soccer: <input type="checkbox" name="zingo" value="/13735/13740/13734/427/5284"  /><br />
+
+        Football: <input type="checkbox" name="zingo" value="/13735/13740"  /><br />
+
+        Baseball: <input type="checkbox" name="zingo" value="/13735/13740/13734/1/5324/5904/8607"  /><br />
+
+        Basketball: <input type="checkbox" name="zingo" value="/735/13740/13734/427/5421/5550/20700"  /><br />
+        <button id="go">Submit!</button>
     </div>
     <div id="zoho">
         <button id="zoinks">Zoinks!</button>
+        <button id="zilch">Zilch</button>
     </div>
     <div id="output"></div>
 
@@ -74,22 +77,42 @@
 <script>
     $(function () {
         $("#tree").kmapsTree({
-            //            termindex_root: "a horked value",
-            //            kmindex_root: "pistacho"
-            // root_id: "places-2"
         }).on('useractivate', function( x,y ){
             console.log("USERACTIVATE");
             $('#output').text(JSON.stringify(arguments,undefined,2));
         });
 
         $("#go").click(function() {
-            $("#tree").kmapsTree('showPaths',$("#zingo").val());
+            $('#output').html("BOGUS!");
+            console.dir(arguments);
+
+            var paths = $(':checkbox:checked[name=zingo]').map(function () {
+                return this.value;
+            }).get();
+
+//            $('#output').append($('li').text("PATHS: " + JSON.stringify(paths)));
+            $("#tree").kmapsTree('showPaths',paths);
         })
 
         $('#zoinks').click(function () {
             $("#tree").kmapsTree('showPaths',["/13735/13740","/13735/13740/13734/1/5324/5904/8607","/13735/13740/13734/427/5421/5550/20700","/735/13740/13734/427/5421/5550/20700"], function() { console.log("showPath callback"); console.dir(arguments)});
         });
+
+        $('#zilch').click(function () {
+            $("#tree").kmapsTree('reset', function() {
+                console.log ("Reset");
+            })
+        })
     });
 </script>
 </body>
 </html>
+
+
+<!--
+
+
+Subjects path to check:
+/6403/20/62/2917/3379/3401
+
+-->

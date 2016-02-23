@@ -13,8 +13,8 @@
     // as this (slightly) quickens the resolution process and can be more efficiently
     // minified (especially when both are regularly referenced in your plugin).
 
-    const SOLRLIMIT = 2000;
-    var debug=false;
+    const SOLR_ROW_LIMIT = 2000;
+    const DEBUG=true;
 
     // Create the defaults once
     var pluginName = "kmapsTree",
@@ -141,7 +141,7 @@
                 },
 
                 postProcess: function (event, data) {
-                    if (debug) console.log("postProcess!");
+                    if (DEBUG) console.log("postProcess!");
                     data.result = [];
 
                     var docs = data.response.response.docs;
@@ -448,7 +448,7 @@
             var result =
                 termIndexRoot + "/select?" +
                 "q=ancestor_id_path:" + path +
-                "&wt=json&indent=true&limit=" + SOLRLIMIT +
+                "&wt=json&indent=true&limit=" + SOLR_ROW_LIMIT +
                 "&facet=true" +
                 "&fl=header,id,ancestor_*,level_i" +
                 "&indent=true" +
@@ -461,25 +461,27 @@
                 "&facet.sort=ancestor_id_path" +
                 "&facet.field={!ex=hoot}ancestor_id_path" +
                 "&wt=json" +
-                "&rows=50";
+                "&rows=" + SOLR_ROW_LIMIT;
 
 
             return result;
         },
         showPaths: function(paths, callback) {
 
+            // ensure it is an array
+            if (!$.isArray(paths)) {
+                // wrap a single bare path into a single-value array.
+                paths = [ paths ];
+            }
 
-
-            // if (debug) console.log("loadKeyPath " + paths);
-
-            if (debug) console.dir(paths);
+            if (DEBUG) console.log("loadKeyPath " + paths);
 
             if (paths !== null) {
                 this.element.fancytree("getTree").loadKeyPath(paths,
                     function (node, state) {
-                        if (debug) console.log("Terminal callback");
-                        console.dir(node);
-                        console.dir(state);
+                        if (DEBUG) console.log("Terminal callback");
+                        if (DEBUG) console.dir(node);
+                        if (DEBUG) console.dir(state);
 
                         if (node === null) {
                             console.error("HEY NODE IS NULL");
@@ -487,19 +489,21 @@
                         }
 
                         if (state === "ok") {
-
-                            if (debug) console.log("ok " + node);
-                            var ret = node.tree.filterNodes(function (x) {
-                                if (debug) console.log( "     filt:" + x.getKeyPath());
-                                return $.inArray(x.getKeyPath(), paths) !== -1;
-                                // unfortunately filterNodes does not implement a callback for when it is done AFAICT
-                            }, {autoExpand: true});
-                            if (debug) console.log("filterNodes returned: " + ret);
+                            console.log("state = OK");
+                            if (node != null) {
+                                if (DEBUG) console.log("ok " + node);
+                                var ret = node.tree.filterNodes(function (x) {
+                                    if (DEBUG) console.log("     filt:" + x.getKeyPath());
+                                    return $.inArray(x.getKeyPath(), paths) !== -1;
+                                    // unfortunately filterNodes does not implement a callback for when it is done AFAICT
+                                }, {autoExpand: true});
+                                if (DEBUG) console.log("filterNodes returned: " + ret);
+                            }
                         } else if (state == "loading") {
-                            if (debug) console.log("loading " + node);
+                            if (DEBUG) console.log("loading " + node);
                         } else if (state == "loaded") {
-                            if (debug) console.log("loaded" + node);
-                        } else {
+                            if (DEBUG) console.log("loaded" + node);
+                        } else if (state == "error") {
                             console.error("ERROR: state was " + state + " for " + node );
                         }
 
@@ -509,7 +513,7 @@
                     // The logic here is not DRY, so will need to refactor.
 
                     function () {
-                        if (debug) console.log("Calling back! ");
+                        if (DEBUG) console.log("Calling back! ");
                         console.dir(arguments);
                         if (callback) callback();
                     }
@@ -528,7 +532,10 @@
             });
             cb(ftree);
         },
-
+        reset: function(cb) {
+                this.element.fancytree("getTree").clearFilter();
+                if (cb) { cb(); }
+            },
         // Utility Functions
         sendEvent: function (handler, event, data) {
             function encapsulate(eventtype, event,n) {
