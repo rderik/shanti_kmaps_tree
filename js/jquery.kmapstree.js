@@ -13,8 +13,8 @@
     // as this (slightly) quickens the resolution process and can be more efficiently
     // minified (especially when both are regularly referenced in your plugin).
 
-    const SOLR_ROW_LIMIT = 2000;
-    const DEBUG=true;
+    var SOLR_ROW_LIMIT = 2000;
+    var DEBUG=false;
 
     // Create the defaults once
     var pluginName = "kmapsTree",
@@ -23,6 +23,7 @@
             kmindex_root: "http://kidx.shanti.virginia.edu/solr/kmindex-dev",
             type: "places",
             root_kmapid: 13735,
+            root_kmap_path: "/", // "/13735/13740/13734",
             baseUrl: "http://subjects.kmaps.virginia.edu/"
         };
 
@@ -40,8 +41,12 @@
         this.init();
     }
 
-
-
+    function log(msg) {
+        if (DEBUG) {
+            console.log(msg);
+            $('#debug').append(msg + "<br/>");
+        }
+    }
 
     $.extend(KmapsTreePlugin.prototype, {
         init: function () {
@@ -55,6 +60,10 @@
             this.element = $(plugin.element);
             // $(plugin.element).append($("<div>").text(plugin.settings.termindex_root), $("<div>").text(plugin.settings.kmindex_root));
 
+            $(this).uniqueId();  // create unique ID if it doesn't have one already
+
+            log("THIS ID:" + this.id);
+
             //
             // Fancytree plugin
             //
@@ -64,6 +73,7 @@
                 quicksearch: false,
                 checkbox: false,
                 selectMode: 2,
+                minExpandLevel: 1, // TODO: reconcile this with lazy loading.
                 theme: 'bootstrap',
                 debugLevel: 0,
                 // autoScroll: true,
@@ -74,10 +84,10 @@
                     mode: "hide",
                     leavesOnly: false
                 },
-                cookieId: "kmaps1tree",   //  TODO: Needs to be a unique value per instance!
-                idPrefix: "kmaps1tree",   //  TODO: Needs to be a unique value per instance!
+                cookieId: this.id,
+                idPrefix: this.id,
                 source: {
-                    url: plugin.buildQuery(plugin.settings.termindex_root, plugin.settings.type, plugin.settings.root_kmapid, 1, 2)
+                    url: plugin.buildQuery(plugin.settings.termindex_root, plugin.settings.type, plugin.settings.root_kmap_path, 1, plugin.settings.root_kmap_path.split('/').length)
                 },
 
                 // User Event Handlers
@@ -141,7 +151,7 @@
                 },
 
                 postProcess: function (event, data) {
-                    if (DEBUG) console.log("postProcess!");
+                    log("postProcess!");
                     data.result = [];
 
                     var docs = data.response.response.docs;
@@ -187,12 +197,12 @@
                     }
 
 
-                    //if (debug) console.log("ROOT BIN");
-                    //if (debug) console.log(JSON.stringify(rootbin));
+                    //if (DEBUG) console.log("ROOT BIN");
+                    //if (DEBUG) console.log(JSON.stringify(rootbin));
                     var props = Object.getOwnPropertyNames(rootbin);
                     for (var i = 0; i < props.length; i++) {
                         var node = rootbin[props[i]];
-                        //if (debug) console.log("node: " + node.path + "  parent:" + node.parent);
+                        //if (DEBUG) console.log("node: " + node.path + "  parent:" + node.parent);
 
                         if (rootbin[node.parent]) {
                             var p = rootbin[node.parent];
@@ -208,7 +218,7 @@
                     for (var i = 0; i < x.length; i++) {
                         data.result.push(rootbin[x[i]]);
                     }
-                    //console.dir(data.result);
+                    if (DEBUG) console.dir({log:"result","data":data.result});
                 },
 
                 lazyLoad: function (event, data) {
@@ -250,7 +260,7 @@
                         //ctx.tree.activateKey(startId);
                         var startNode = ctx.tree.getNodeByKey(startId);
                         if (startNode) {
-                            //if (debug) console.log("autoExpanding node: " + startNode.title + " (" + startNode.key + ")");
+                            //if (DEBUG) console.log("autoExpanding node: " + startNode.title + " (" + startNode.key + ")");
                             try {
                                 startNode.setExpanded(true);
                                 startNode.makeVisible();
@@ -264,18 +274,18 @@
             });
 
             function decorateElementWithPopover(elem, key, title, path, caption) {
-                //if (debug) console.log("decorateElementWithPopover: "  + elem);
+                //if (DEBUG) console.log("decorateElementWithPopover: "  + elem);
                 if (jQuery(elem).popover) {
                     jQuery(elem).attr('rel', 'popover');
 
-                    //if (debug) console.log("caption = " + caption);
+                    //if (DEBUG) console.log("caption = " + caption);
                     jQuery(elem).popover({
                             html: true,
                             content: function () {
                                 caption = ((caption) ? caption : "");
                                 var popover = "<div class='kmap-path'>/" + path + "</div>" + "<div class='kmap-caption'>" + caption + "</div>" +
                                     "<div class='info-wrap' id='infowrap" + key + "'><div class='counts-display'>...</div></div>";
-                                //if (debug) console.log("Captioning: " + caption);
+                                //if (DEBUG) console.log("Captioning: " + caption);
                                 return popover;
                             },
                             title: function () {
@@ -346,7 +356,7 @@
                                 var solrURL = kmidxBase + '/select?q=kmapid:' + plugin.settings.type + '-' + key + project_filter + '&start=0&facets=on&group=true&group.field=asset_type&group.facet=true&group.ngroups=true&group.limit=0&wt=json';
                                 //if (debug) console.log ("solrURL = " + solrURL);
                                 $.get(solrURL, function (json) {
-                                    //if (debug) console.log(json);
+                                    //if (DEBUG) console.log(json);
                                     var updates = {};
                                     var data = JSON.parse(json);
                                     $.each(data.grouped.asset_type.groups, function (x, y) {
@@ -410,9 +420,9 @@
             };
 
             function decorateElemWithDrupalAjax(theElem, theKey, theType) {
-                //if (debug) console.log("decorateElementWithDrupalAjax: "  + $(theElem).html());
+                //if (DEBUG) console.log("decorateElementWithDrupalAjax: "  + $(theElem).html());
                 $(theElem).once('nav', function () {
-                    //if (debug) console.log("applying click handling to " + $(this).html());
+                    //if (DEBUG) console.log("applying click handling to " + $(this).html());
                     var base = $(this).attr('id') || "ajax-wax-" + theKey;
                     var argument = $(this).attr('argument');
                     var url = location.origin + location.pathname.substring(0, location.pathname.indexOf(theType)) + theType + '/' + theKey + '/overview/nojs';
@@ -425,11 +435,11 @@
                         }
                     };
 
-                    // if (debug) console.log("Adding to ajax to " + base);
+                    // if (DEBUG) console.log("Adding to ajax to " + base);
 
                     Drupal.ajax[base] = new Drupal.ajax(base, this, element_settings);
                     //this.click(function () {
-                    //    if (debug) console.log("pushing state for " + url);
+                    //    if (DEBUG) console.log("pushing state for " + url);
                     //    window.history.pushState({tag: true}, null, url);
                     //});
                 });
@@ -442,8 +452,9 @@
         },
         buildQuery: function (termIndexRoot, type, path, lvla, lvlb) {
 
-            //if (debug) console.log("termIndexRoot = " + termIndexRoot  + "\ntype = " + type + "\npath = " + path + "\nlvla  = " + lvla + "\nlvlb = " + lvlb);
-
+            //if (DEBUG) console.log("termIndexRoot = " + termIndexRoot  + "\ntype = " + type + "\npath = " + path + "\nlvla  = " + lvla + "\nlvlb = " + lvlb);
+            // clean up path (no "/" root!)
+            path = path.replace(/^\//, "");
 
             var result =
                 termIndexRoot + "/select?" +
@@ -463,10 +474,15 @@
                 "&wt=json" +
                 "&rows=" + SOLR_ROW_LIMIT;
 
+            if (DEBUG) { console.log( "buildQuery():SOLR QUERY=" + result )}
 
             return result;
         },
         showPaths: function(paths, callback) {
+
+            //console.log("ARGY!");
+            //console.dir(arguments);
+            var plugin = this;
 
             // ensure it is an array
             if (!$.isArray(paths)) {
@@ -474,12 +490,54 @@
                 paths = [ paths ];
             }
 
-            if (DEBUG) console.log("loadKeyPath " + paths);
+            var cleanPath=function (path, parentOnly, rootSlash) {
+                log("cleanPath() args: " + JSON.stringify(arguments, undefined, 2));
+                log("cleanPath() in: " + path);
+                // Eliminate initial/terminal slash
+                path = path.replace(/^\/+/,'');
+                path = path.replace(/\/$/, '');
+                var p = path.split('/');
+                if (parentOnly) { p.splice(-1,1) }
+                path = rootSlash?"/":"";
+                path += p.join('/');
+                var msg = "cleanPath() out: " + path;
+                log(msg);
+                return path;
+            }
+
+            //
+            //
+            //
+            ////  Cleanup and re-root the paths
+            var fixPath = function (path, i) {
+                path = cleanPath(path);
+
+                log("fixPath(): root_kmap_path = " + plugin.settings.root_kmap_path );
+
+                var rootpath = cleanPath(plugin.settings.root_kmap_path, true, false);
+                log("fixPath(): rootpath = " + rootpath);
+                log("fixPath(): path = " + path);
+
+                path=path.replace(rootpath,"");
+                log("fixPath(): fixed path = " + path);
+
+                // truncate the beginning of the path according to kmap_root_path
+                var clean = cleanPath(path,false, true);
+                log("fixPath(): fixed clean = " + clean);
+
+                return clean;
+            };
+
+            paths = $.map(paths, fixPath);
+
+            console.dir(paths)
+
+            if (DEBUG) log("loadKeyPath " + paths);
 
             if (paths !== null) {
                 this.element.fancytree("getTree").loadKeyPath(paths,
                     function (node, state) {
-                        if (DEBUG) console.log("Terminal callback");
+                        if (DEBUG) log("Terminal callback");
                         if (DEBUG) console.dir(node);
                         if (DEBUG) console.dir(state);
 
@@ -489,33 +547,35 @@
                         }
 
                         if (state === "ok") {
-                            console.log("state = OK");
+                            log("state = OK");
                             if (node != null) {
-                                if (DEBUG) console.log("ok " + node);
+                                if (DEBUG) log("ok " + node);
                                 var ret = node.tree.filterNodes(function (x) {
-                                    if (DEBUG) console.log("     filt:" + x.getKeyPath());
+                                    if (DEBUG) log("     filt:" + x.getKeyPath());
                                     return $.inArray(x.getKeyPath(), paths) !== -1;
                                     // unfortunately filterNodes does not implement a callback for when it is done AFAICT
                                 }, {autoExpand: true});
-                                if (DEBUG) console.log("filterNodes returned: " + ret);
+                                if (DEBUG) log("filterNodes returned: " + ret);
                             }
                         } else if (state == "loading") {
-                            if (DEBUG) console.log("loading " + node);
+                            if (DEBUG) log("loading " + node);
                         } else if (state == "loaded") {
-                            if (DEBUG) console.log("loaded" + node);
+                            if (DEBUG) log("loaded" + node);
                         } else if (state == "error") {
                             console.error("ERROR: state was " + state + " for " + node );
                         }
 
                     }
                 ).always(
-
                     // The logic here is not DRY, so will need to refactor.
-
                     function () {
-                        if (DEBUG) console.log("Calling back! ");
-                        console.dir(arguments);
-                        if (callback) callback();
+                        if (callback) {
+                            if (DEBUG) {
+                                log("Calling back! ");
+                                console.dir(arguments);
+                            }
+                            callback();
+                        }
                     }
                 );
             } else {
@@ -550,7 +610,7 @@
                 }
             }
 
-            // console.log("HANDLER:  " + handler);
+            // log("HANDLER:  " + handler);
             var kmapid = this.settings.type + "-" + data.node.key;
             var path = "/" + data.node.data.path;
             var origEvent = (event.originalEvent)?event.originalEvent.type:"none";
@@ -572,7 +632,7 @@
                 // console.error("ACTIVATE: " + data.node.title);
                  $(this.element).trigger("activate", encapsulate("codeactivate",event,data.node.tree.getActiveNode()));
             } else {
-                console.log("UNHANDLED EVENT: " + event);
+                log("UNHANDLED EVENT: " + event);
                 console.dir(event);
             }
         }
@@ -593,10 +653,10 @@
 
     //$.fn[pluginName].loadKeyPath = function (path, func) {
     //    this.loadKeyPath(path, function() {
-    //        if (debug) console.log("loadKeyPath callback: " + path);
+    //        if (DEBUG) log("loadKeyPath callback: " + path);
     //        tree.filterNodes(function (node, func) {
     //            var match = (node.getKeyPath() === path);
-    //            if (debug) console.log(match + " = " + node.getKeyPath() + " ? " + path);
+    //            if (DEBUG) (match + " = " + node.getKeyPath() + " ? " + path);
     //            return match;
     //        });
     //    });

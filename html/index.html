@@ -20,6 +20,10 @@
 
 
 <body>
+
+
+
+
 <!-- BEGIN view section -->
 <section class="view-section">
     <ul class="nav nav-tabs">
@@ -31,6 +35,10 @@
     <div class="tab-content">
         <!-- TAB - tree view -->
         <div id="tree" class="treeview tab-pane active">
+            <div class="tree view-wrap"><!-- view-wrap controls tree container height --></div>
+        </div>
+
+        <div id="tree2" class="treeview tab-pane active">
             <div class="tree view-wrap"><!-- view-wrap controls tree container height --></div>
         </div>
         <!-- TAB - list view -->
@@ -53,58 +61,90 @@
             </div>
         </div>
     </div>
-
-    <div id="zither">
-
-
-        Soccer: <input type="checkbox" name="zingo" value="/13735/13740/13734/427/5284"  /><br />
-
-        Football: <input type="checkbox" name="zingo" value="/13735/13740"  /><br />
-
-        Baseball: <input type="checkbox" name="zingo" value="/13735/13740/13734/1/5324/5904/8607"  /><br />
-
-        Basketball: <input type="checkbox" name="zingo" value="/735/13740/13734/427/5421/5550/20700"  /><br />
-        <button id="go">Submit!</button>
-    </div>
-    <div id="zoho">
-        <button id="zoinks">Zoinks!</button>
-        <button id="zilch">Zilch</button>
-    </div>
-    <div id="output"></div>
-
-
 </section><!-- END view section -->
 <script>
     $(function () {
         $("#tree").kmapsTree({
+            root_kmap_path: "/13735/13740/13734"
         }).on('useractivate', function( x,y ){
             console.log("USERACTIVATE");
-            $('#output').text(JSON.stringify(arguments,undefined,2));
+            console.dir(y);
+
+            $('#output').append(JSON.stringify(y, function( key, value) {
+                if (key == 'event') {
+                    return value.toString()
+                }
+                else {
+                    return value
+                }
+            }, 2) + "<br/>");
         });
 
+        $("#tree2").kmapsTree({
+            root_kmap_path: "/13735"
+        }).on('useractivate', function( x,y ){
+            console.log("USERACTIVATE");
+            console.dir(y);
+
+            $('#output').append(JSON.stringify(y, function( key, value) {
+                        if (key == 'event') {
+                            return value.toString()
+                        }
+                        else {
+                            return value
+                        }
+                    }, 2) + "<br/>");
+        });
+
+
         $("#go").click(function() {
-            $('#output').html("BOGUS!");
-            console.dir(arguments);
+            $('#output').html("<p>BOGUS!</p>");
+            // console.dir(arguments);
 
             var paths = $(':checkbox:checked[name=zingo]').map(function () {
                 return this.value;
             }).get();
 
-//            $('#output').append($('li').text("PATHS: " + JSON.stringify(paths)));
             $("#tree").kmapsTree('showPaths',paths);
+            $("#tree2").kmapsTree('showPaths',paths);
+
         })
 
         $('#zoinks').click(function () {
-            $("#tree").kmapsTree('showPaths',["/13735/13740","/13735/13740/13734/1/5324/5904/8607","/13735/13740/13734/427/5421/5550/20700","/735/13740/13734/427/5421/5550/20700"], function() { console.log("showPath callback"); console.dir(arguments)});
+            $("#tree").kmapsTree('showPaths',["/13735/13740","/13735/13740/13734/1/5324/5904/8607","/13735/13740/13734/427/5421/5550/20700","/13735/13740/13734/427/5421/5550/20700"], function() { console.log("showPath callback"); console.dir(arguments)});
+            $("#tree2").kmapsTree('showPaths',["/13735/13740","/13735/13740/13734/1/5324/5904/8607","/13735/13740/13734/427/5421/5550/20700","/13735/13740/13734/427/5421/5550/20700"], function() { console.log("showPath callback"); console.dir(arguments)});
         });
 
         $('#zilch').click(function () {
             $("#tree").kmapsTree('reset', function() {
-                console.log ("Reset");
-            })
+                $('#output').html($('<dt>').text('reset tree'));
+            });
+            $("#tree2").kmapsTree('reset', function() {
+                $('#output').html($('<dt>').text('reset tree2'));
+            });
         })
     });
 </script>
+<div id="zither">
+
+    <input type="checkbox" name="zingo" value="/13735/13740/13734/427/5284"  />/13735/13740/13734/427/5284 <br />
+
+    <input type="checkbox" name="zingo" value="/13735/13740"  />/13735/13740<br />
+
+    <input type="checkbox" name="zingo" value="/13735/13740/13734/1/5324/5904/8607"  />/13735/13740/13734/1/5324/5904/8607<br />
+
+    <input type="checkbox" name="zingo" value="/13735/13740/13734/427/5421/5550/20700"  />/13735/13740/13734/427/5421/5550/20700<br />
+
+    <input type="checkbox" name="zingo" value="/13735/13740/13734/5226/15357/5225/15360" />/13735/13740/13734/5226/15357/5225/15360<br/>
+
+    <button id="go">Submit!</button>
+</div>
+<div id="zoho">
+    <button id="zoinks">Zoinks!</button>
+    <button id="zilch">Zilch</button>
+</div>
+<div id="output" style="overflow:scroll; height:400px;" ></div>
+
 </body>
 </html>
 

@@ -1,0 +1,120 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>KMaps Tree Test</title>
+    <link rel="stylesheet" href="//code.jquery.com/qunit/qunit-1.21.0.css">
+
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-once/2.1.1/jquery.once.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.13.0/jquery.fancytree-all.js"></script>
+    <script src="../js/bootstrap.js"></script>
+    <script src="../js/jquery.kmapstree.js"></script>
+    <script src="./qunit-promises.js"></script>
+
+    <link type="text/css" rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"
+          media="all"/>
+    <link type="text/css" rel="stylesheet"
+          href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css" media="all"/>
+
+    <link type="text/css" rel="stylesheet" href="../css/kmapstree.css" media="all"/>
+    <link type="text/css" rel="stylesheet" href="../css/kmapstree.css" media="all"/>
+    <link type="text/css" rel="stylesheet" href="../css/kmapstree.css" media="all"/>
+
+<body>
+
+<div id="qunit"></div>
+<div id="qunit-fixture">
+    <!-- BEGIN view section -->
+    <section class="view-section">
+        <ul class="nav nav-tabs">
+            <li class="treeview active"><a href=".treeview" data-toggle="tab"><span class="icon shanticon-tree"></span>Tree</a>
+            </li>
+            <li class="listview"><a href=".listview" data-toggle="tab"><span class="icon shanticon-list"></span>List</a>
+            </li>
+        </ul>
+        <div class="tab-content">
+            <!-- TAB - tree view -->
+            <div id="tree" class="treeview tab-pane active">
+                <div class="tree view-wrap"><!-- view-wrap controls tree container height --></div>
+            </div>
+            <!-- TAB - list view -->
+            <div class="listview tab-pane">
+                <div id="pager" class="pagination"></div>
+
+                <div class="view-wrap"> <!-- view-wrap controls container height -->
+                    <div class="table-responsive">
+                        <table class="table table-condensed table-results">
+                            <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Feature Type</th>
+                            </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                        <div id="pager-header"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="zither">
+
+
+            Soccer: <input type="checkbox" name="zingo" value="/13735/13740/13734/427/5284"  /><br />
+
+            Football: <input type="checkbox" name="zingo" value="/13735/13740"  /><br />
+
+            Baseball: <input type="checkbox" name="zingo" value="/13735/13740/13734/1/5324/5904/8607"  /><br />
+
+            Basketball: <input type="checkbox" name="zingo" value="/735/13740/13734/427/5421/5550/20700"  /><br />
+            <button id="go">Submit!</button>
+        </div>
+        <div id="zoho">
+            <button id="zoinks">Zoinks!</button>
+        </div>
+        <div id="output"></div>
+
+
+    </section><!-- END view section -->
+    <script>
+        $(function () {
+            $("#tree").kmapsTree({
+                //            termindex_root: "a horked value",
+                //            kmindex_root: "pistacho"
+                // root_id: "places-2"
+            }).on('useractivate', function( x,y ){
+                console.log("USERACTIVATE");
+                $('#output').text(JSON.stringify(arguments,undefined,2));
+            });
+
+            $("#go").click(function() {
+
+                $('#output').html("BOGUS!");
+                var paths = $(':checkbox:checked[name=zingo]').map(function () {
+                    return this.value;
+                }).get();
+
+                $('#output').append($('li').text("PATHS: " + JSON.stringify(paths)));
+                $("#tree").kmapsTree('showPaths',paths);
+            })
+
+            $('#zoinks').click(function () {
+                $("#tree").kmapsTree('showPaths',["/13735/13740","/13735/13740/13734/1/5324/5904/8607","/13735/13740/13734/427/5421/5550/20700","/735/13740/13734/427/5421/5550/20700"], function() { console.log("showPath callback"); console.dir(arguments)});
+            });
+        });
+    </script>
+
+
+
+
+
+
+
+</div>
+<script src="//code.jquery.com/qunit/qunit-1.21.0.js"></script>
+<script src="tests.js"></script>
+</body>
+</html>
