@@ -14,7 +14,7 @@
     // minified (especially when both are regularly referenced in your plugin).
 
     var SOLR_ROW_LIMIT = 2000;
-    var DEBUG=false;
+    var DEBUG = false;
 
     // Create the defaults once
     var pluginName = "kmapsTree",
@@ -27,6 +27,12 @@
             baseUrl: "http://subjects.kmaps.virginia.edu/"
         };
 
+    // copied from jquery.fancytree.js to support moved loadKeyPath function
+    function _makeResolveFunc(deferred, context){
+        return function(){
+            deferred.resolveWith(context);
+        };
+    }
 
     // The actual plugin constructor
     function KmapsTreePlugin(element, options) {
@@ -91,18 +97,18 @@
                 },
 
                 // User Event Handlers
-                select: function(event, data) {
-                    plugin.sendEvent("SELECT",event, data);
+                select: function (event, data) {
+                    plugin.sendEvent("SELECT", event, data);
                 },
                 focus: function (event, data) {
                     data.node.scrollIntoView(true);
-                    plugin.sendEvent("FOCUS",event, data);
+                    plugin.sendEvent("FOCUS", event, data);
                 },
                 keydown: function (event, data) {
-                    plugin.sendEvent("KEYDOWN",event, data);
+                    plugin.sendEvent("KEYDOWN", event, data);
                 },
-                activate: function(event, data) {
-                    plugin.sendEvent("ACTIVATE",event, data);
+                activate: function (event, data) {
+                    plugin.sendEvent("ACTIVATE", event, data);
                 },
 
                 //
@@ -122,7 +128,7 @@
                     var theCaption = data.node.data.caption;
                     var theIdPath = data.node.data.path;
                     // decorateElementWithPopover(theElem, theKey,theTitle, theIdPath,theCaption );
-                     decorateElemWithDrupalAjax(theElem, theKey, theType);
+                    decorateElemWithDrupalAjax(theElem, theKey, theType);
                     return data;
                 },
                 renderNode: function (event, data) {
@@ -168,7 +174,7 @@
                     for (var i = 0; i < facet_counts.length; i += 2) {
                         var path = facet_counts[i];
                         var count = facet_counts[i + 1];
-                        countbin[path] =(count-1);
+                        countbin[path] = (count - 1);
                     }
 
                     for (var i = 0; i < docs.length; i++) {
@@ -218,7 +224,7 @@
                     for (var i = 0; i < x.length; i++) {
                         data.result.push(rootbin[x[i]]);
                     }
-                    if (DEBUG) console.dir({log:"result","data":data.result});
+                    if (DEBUG) console.dir({log: "result", "data": data.result});
                 },
 
                 lazyLoad: function (event, data) {
@@ -265,7 +271,7 @@
                                 startNode.setExpanded(true);
                                 startNode.makeVisible();
                             } catch (e) {
-                                console.error ("autoExpand failed: " + e.toString())
+                                console.error("autoExpand failed: " + e.toString())
                             }
                         }
                     }
@@ -474,11 +480,13 @@
                 "&wt=json" +
                 "&rows=" + SOLR_ROW_LIMIT;
 
-            if (DEBUG) { console.log( "buildQuery():SOLR QUERY=" + result )}
+            if (DEBUG) {
+                console.log("buildQuery():SOLR QUERY=" + result)
+            }
 
             return result;
         },
-        showPaths: function(paths, callback) {
+        showPaths: function (paths, callback) {
 
             //console.log("ARGY!");
             //console.dir(arguments);
@@ -487,23 +495,27 @@
             // ensure it is an array
             if (!$.isArray(paths)) {
                 // wrap a single bare path into a single-value array.
-                paths = [ paths ];
+                paths = [paths];
             }
 
-            var cleanPath=function (path, parentOnly, rootSlash) {
+            if (DEBUG) log("paths " + paths);
+
+            var cleanPath = function (path, parentOnly, rootSlash) {
                 log("cleanPath() args: " + JSON.stringify(arguments, undefined, 2));
                 log("cleanPath() in: " + path);
                 // Eliminate initial/terminal slash
-                path = path.replace(/^\/+/,'');
+                path = path.replace(/^\/+/, '');
                 path = path.replace(/\/$/, '');
                 var p = path.split('/');
-                if (parentOnly) { p.splice(-1,1) }
-                path = rootSlash?"/":"";
+                if (parentOnly) {
+                    p.splice(-1, 1)
+                }
+                path = rootSlash ? "/" : "";
                 path += p.join('/');
                 var msg = "cleanPath() out: " + path;
                 log(msg);
                 return path;
-            }
+            };
 
             //
             //
@@ -512,17 +524,17 @@
             var fixPath = function (path, i) {
                 path = cleanPath(path);
 
-                log("fixPath(): root_kmap_path = " + plugin.settings.root_kmap_path );
+                log("fixPath(): root_kmap_path = " + plugin.settings.root_kmap_path);
 
                 var rootpath = cleanPath(plugin.settings.root_kmap_path, true, false);
                 log("fixPath(): rootpath = " + rootpath);
                 log("fixPath(): path = " + path);
 
-                path=path.replace(rootpath,"");
+                path = path.replace(rootpath, "");
                 log("fixPath(): fixed path = " + path);
 
                 // truncate the beginning of the path according to kmap_root_path
-                var clean = cleanPath(path,false, true);
+                var clean = cleanPath(path, false, true);
                 log("fixPath(): fixed clean = " + clean);
 
                 return clean;
@@ -530,75 +542,167 @@
 
             paths = $.map(paths, fixPath);
 
-            console.dir(paths)
+            console.dir(paths);
 
-            if (DEBUG) log("loadKeyPath " + paths);
+            var showPaths = [];
+            for (var i = 0; i < paths.length; i++) {
+                if (this.element.fancytree('getTree').getNodeByKey(paths[i].substring(paths[i].lastIndexOf('/') + 1)) == null) {
+                    showPaths.push(paths[i]);
+                }
+            }
+            if (DEBUG) log("loadKeyPath " + showPaths);
 
             if (paths !== null) {
-                this.element.fancytree("getTree").loadKeyPath(paths,
-                    function (node, state) {
-                        if (DEBUG) log("Terminal callback");
-                        if (DEBUG) console.dir(node);
-                        if (DEBUG) console.dir(state);
+                if (showPaths.length == 0) {
+                    var ret = this.element.fancytree('getTree').filterNodes(function (x) {
+                        if (DEBUG) log("     filt:" + x.getKeyPath());
+                        return $.inArray(x.getKeyPath(), paths) !== -1;
+                        // unfortunately filterNodes does not implement a callback for when it is done AFAICT
+                    }, {autoExpand: true});
+                    if (DEBUG) log("filterNodes returned: " + ret);
+                }
+                else {
+                    this.loadKeyPath(this.element.fancytree("getTree"), showPaths,
+                        function (node, state) {
+                            if (DEBUG) log("Terminal callback");
+                            if (DEBUG) console.dir(node);
+                            if (DEBUG) console.dir(state);
 
-                        if (node === null) {
-                            console.error("HEY NODE IS NULL");
-                            console.error("paths = " + JSON.stringify(paths));
-                        }
-
-                        if (state === "ok") {
-                            log("state = OK");
-                            if (node != null) {
-                                if (DEBUG) log("ok " + node);
-                                var ret = node.tree.filterNodes(function (x) {
-                                    if (DEBUG) log("     filt:" + x.getKeyPath());
-                                    return $.inArray(x.getKeyPath(), paths) !== -1;
-                                    // unfortunately filterNodes does not implement a callback for when it is done AFAICT
-                                }, {autoExpand: true});
-                                if (DEBUG) log("filterNodes returned: " + ret);
+                            if (node === null) {
+                                console.error("HEY NODE IS NULL");
+                                console.error("paths = " + JSON.stringify(showPaths));
                             }
-                        } else if (state == "loading") {
-                            if (DEBUG) log("loading " + node);
-                        } else if (state == "loaded") {
-                            if (DEBUG) log("loaded" + node);
-                        } else if (state == "error") {
-                            console.error("ERROR: state was " + state + " for " + node );
-                        }
 
-                    }
-                ).always(
-                    // The logic here is not DRY, so will need to refactor.
-                    function () {
-                        if (callback) {
-                            if (DEBUG) {
-                                log("Calling back! ");
-                                console.dir(arguments);
+                            if (state === "ok") {
+                                log("state = OK");
+                                if (node != null) {
+                                    if (DEBUG) log("ok " + node);
+                                    var ret = node.tree.filterNodes(function (x) {
+                                        if (DEBUG) log("     filt:" + x.getKeyPath());
+                                        return $.inArray(x.getKeyPath(), paths) !== -1;
+                                        // unfortunately filterNodes does not implement a callback for when it is done AFAICT
+                                    }, {autoExpand: true});
+                                    if (DEBUG) log("filterNodes returned: " + ret);
+                                }
+                            } else if (state == "loading") {
+                                if (DEBUG) log("loading " + node);
+                            } else if (state == "loaded") {
+                                if (DEBUG) log("loaded" + node);
+                            } else if (state == "error") {
+                                console.error("ERROR: state was " + state + " for " + node);
                             }
-                            callback();
+
                         }
-                    }
-                );
+                    ).always(
+                        // The logic here is not DRY, so will need to refactor.
+                        function () {
+                            if (callback) {
+                                if (DEBUG) {
+                                    log("Calling back! ");
+                                    console.dir(arguments);
+                                }
+                                callback();
+                            }
+                        }
+                    );
+                }
             } else {
                 if (callback) callback();
             }
         },
-        getNodeByKey: function(key,root) {
-            return this.element.fancytree("getTree").getNodeByKey(key,root);
+        loadKeyPath: function(tree, keyPathList, callback, _rootNode) {
+            var deferredList, dfd, i, path, key, loadMap, node, root, segList,
+                sep = tree.options.keyPathSeparator,
+                self = tree;
+
+            if(!$.isArray(keyPathList)){
+                keyPathList = [keyPathList];
+            }
+            // Pass 1: handle all path segments for nodes that are already loaded
+            // Collect distinct top-most lazy nodes in a map
+            loadMap = {};
+
+            for(i=0; i<keyPathList.length; i++){
+                root = _rootNode || self.rootNode;
+                path = keyPathList[i];
+                // strip leading slash
+                if(path.charAt(0) === sep){
+                    path = path.substr(1);
+                }
+                // traverse and strip keys, until we hit a lazy, unloaded node
+                segList = path.split(sep);
+                while(segList.length){
+                    key = segList.shift();
+//                node = _findDirectChild(root, key);
+                    node = root._findDirectChild(key);
+                    if(!node){
+                        self.warn("loadKeyPath: key not found: " + key + " (parent: " + root + ")");
+                        callback.call(self, key, "error");
+                        break;
+                    }else if(segList.length === 0){
+                        callback.call(self, node, "ok");
+                        break;
+                    }else if(!node.lazy || (node.hasChildren() !== undefined )){
+                        callback.call(self, node, "loaded");
+                        root = node;
+                    }else{
+                        callback.call(self, node, "loaded");
+//                    segList.unshift(key);
+                        if(loadMap[key]){
+                            loadMap[key].push(segList.join(sep));
+                        }else{
+                            loadMap[key] = [segList.join(sep)];
+                        }
+                        break;
+                    }
+                }
+            }
+//        alert("loadKeyPath: loadMap=" + JSON.stringify(loadMap));
+            // Now load all lazy nodes and continue itearation for remaining paths
+            deferredList = [];
+            // Avoid jshint warning 'Don't make functions within a loop.':
+            function __lazyload(key, node, dfd){
+                callback.call(self, node, "loading");
+                node.load().done(function(){
+                    self.loadKeyPath.call(self, loadMap[key], callback, node).always(_makeResolveFunc(dfd, self));
+                }).fail(function(errMsg){
+                    self.warn("loadKeyPath: error loading: " + key + " (parent: " + root + ")");
+                    callback.call(self, node, "error");
+                    dfd.reject();
+                });
+            }
+            for(key in loadMap){
+                node = root._findDirectChild(key);
+                if (node == null) {
+                    node = self.getNodeByKey(key);
+                }
+//            alert("loadKeyPath: lazy node(" + key + ") = " + node);
+                dfd = new $.Deferred();
+                deferredList.push(dfd);
+                __lazyload(key, node, dfd);
+            }
+            // Return a promise that is resovled, when ALL paths were loaded
+            return $.when.apply($, deferredList).promise();
         },
-        hideAll: function(cb) {
+        getNodeByKey: function (key, root) {
+            return this.element.fancytree("getTree").getNodeByKey(key, root);
+        },
+        hideAll: function (cb) {
             var ftree = this.element.fancytree("getTree");
-            ftree.filter( function(x) {
+            ftree.filter(function (x) {
                 return false;
             });
             cb(ftree);
         },
-        reset: function(cb) {
-                this.element.fancytree("getTree").clearFilter();
-                if (cb) { cb(); }
-            },
+        reset: function (cb) {
+            this.element.fancytree("getTree").clearFilter();
+            if (cb) {
+                cb();
+            }
+        },
         // Utility Functions
         sendEvent: function (handler, event, data) {
-            function encapsulate(eventtype, event,n) {
+            function encapsulate(eventtype, event, n) {
                 return {
                     eventtype: eventtype, // "useractivate","codeactivate"
                     title: n.title,
@@ -613,24 +717,24 @@
             // log("HANDLER:  " + handler);
             var kmapid = this.settings.type + "-" + data.node.key;
             var path = "/" + data.node.data.path;
-            var origEvent = (event.originalEvent)?event.originalEvent.type:"none";
+            var origEvent = (event.originalEvent) ? event.originalEvent.type : "none";
             var keyCode = "";
             if (event.keyCode) {
-                keyCode = "(" + event.keyCode  + ")";
+                keyCode = "(" + event.keyCode + ")";
             }
             if (event.type === "fancytreeactivate" && origEvent === "click") {
                 // This was a user click
                 console.error("USER CLICKED: " + data.node.title);
-                $(this.element).trigger("useractivate", encapsulate("useractivate",event,data.node));
+                $(this.element).trigger("useractivate", encapsulate("useractivate", event, data.node));
             } else if (event.type === "fancytreekeydown" && origEvent === "keydown") {
                 // This was a user arrow key (or return....)
                 console.error("USER KEYED: " + data.node.tree.getActiveNode() + " with " + event.keyCode);
-                $(this.element).trigger("useractivate", encapsulate("useractivate",event, data.node.tree.getActiveNode()));
+                $(this.element).trigger("useractivate", encapsulate("useractivate", event, data.node.tree.getActiveNode()));
             } else if (event.type === "fancytreefocus" && origEvent === "none") {
                 // console.error("FOCUS: " + data.node.title);
             } else if (event.type === "fancytreeactivate" && origEvent === "none") {
                 // console.error("ACTIVATE: " + data.node.title);
-                 $(this.element).trigger("activate", encapsulate("codeactivate",event,data.node.tree.getActiveNode()));
+                $(this.element).trigger("activate", encapsulate("codeactivate", event, data.node.tree.getActiveNode()));
             } else {
                 log("UNHANDLED EVENT: " + event);
                 console.dir(event);
@@ -687,7 +791,6 @@
             return returns !== undefined ? returns : this;
         }
     };
-
 
 
 })(jQuery, window, document);
