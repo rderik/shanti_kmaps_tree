@@ -553,15 +553,16 @@
             if (DEBUG) log("loadKeyPath " + showPaths);
 
             if (paths !== null) {
-                if (showPaths.length == 0) {
+                if (showPaths.length == 0) { // all paths to show have already been loaded
                     var ret = this.element.fancytree('getTree').filterNodes(function (x) {
                         if (DEBUG) log("     filt:" + x.getKeyPath());
                         return $.inArray(x.getKeyPath(), paths) !== -1;
                         // unfortunately filterNodes does not implement a callback for when it is done AFAICT
                     }, {autoExpand: true});
                     if (DEBUG) log("filterNodes returned: " + ret);
+                    if (callback) callback();
                 }
-                else {
+                else { // need to load paths
                     this.loadKeyPath(this.element.fancytree("getTree"), showPaths,
                         function (node, state) {
                             if (DEBUG) log("Terminal callback");
