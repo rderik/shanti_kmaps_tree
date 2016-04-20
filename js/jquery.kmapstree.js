@@ -530,23 +530,26 @@
                 log("fixPath(): rootpath = " + rootpath);
                 log("fixPath(): path = " + path);
 
+                // truncate the beginning of the path according to kmap_root_path
                 path = path.replace(rootpath, "");
                 log("fixPath(): fixed path = " + path);
 
-                // truncate the beginning of the path according to kmap_root_path
                 var clean = cleanPath(path, false, true);
                 log("fixPath(): fixed clean = " + clean);
 
                 return clean;
             };
 
-            paths = $.map(paths, fixPath);
+            // cleanup the paths
+            paths = $.map(paths,fixPath);
+            paths = $.grep(paths, function(x) { console.dir(x); return (x !== "/") } )
 
-            console.dir(paths);
+            log("FILTERED paths: " + paths);
 
             var showPaths = [];
             for (var i = 0; i < paths.length; i++) {
-                if (this.element.fancytree('getTree').getNodeByKey(paths[i].substring(paths[i].lastIndexOf('/') + 1)) == null) {
+                if (DEBUG) log("======> processing path:" + paths[i]);
+                if (paths[i].length > 0 && this.element.fancytree('getTree').getNodeByKey(paths[i].substring(paths[i].lastIndexOf('/') + 1)) == null) {
                     showPaths.push(paths[i]);
                 }
             }
@@ -590,7 +593,7 @@
                             } else if (state == "loaded") {
                                 if (DEBUG) log("loaded" + node);
                             } else if (state == "error") {
-                                console.error("ERROR: state was " + state + " for " + node);
+                                console.log("ERROR: state was " + state + " for " + node);
                             }
 
                         }
@@ -744,28 +747,6 @@
 
     });
 
-    //// A really lightweight plugin wrapper around the constructor,
-    //// preventing against multiple instantiations
-    //$.fn[pluginName] = function (options) {
-    //    return this.each(function () {
-    //        if (!$.data(this, "plugin_" + pluginName)) {
-    //            $.data(this, "plugin_" + pluginName, new KmapsTreePlugin(this, options));
-    //        }
-    //    });
-    //};
-
-    // here we are making functions available outside the plugin.
-
-    //$.fn[pluginName].loadKeyPath = function (path, func) {
-    //    this.loadKeyPath(path, function() {
-    //        if (DEBUG) log("loadKeyPath callback: " + path);
-    //        tree.filterNodes(function (node, func) {
-    //            var match = (node.getKeyPath() === path);
-    //            if (DEBUG) (match + " = " + node.getKeyPath() + " ? " + path);
-    //            return match;
-    //        });
-    //    });
-    //};
 
     // See https://github.com/jquery-boilerplate/jquery-boilerplate/wiki/Extending-jQuery-Boilerplate
     $.fn[pluginName] = function (options) {
