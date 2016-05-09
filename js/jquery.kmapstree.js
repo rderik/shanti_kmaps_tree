@@ -536,6 +536,7 @@
                 log("fixPath(): rootpath = " + rootpath);
                 log("fixPath(): path = " + path);
 
+                // truncate the beginning of the path according to kmap_root_path
                 path = path.replace(rootpath, "");
                 log("fixPath(): fixed path = " + path);
 
@@ -546,28 +547,32 @@
                 return clean;
             };
 
-            paths = $.map(paths, fixPath);
+            // cleanup the paths
+            paths = $.map(paths,fixPath);
+            paths = $.grep(paths, function(x) { console.dir(x); return (x !== "/") } )
 
             if (DEBUG) { console.dir(paths); }
 
             var showPaths = [];
             for (var i = 0; i < paths.length; i++) {
-                if (this.element.fancytree('getTree').getNodeByKey(paths[i].substring(paths[i].lastIndexOf('/') + 1)) == null) {
+                if (DEBUG) log("======> processing path:" + paths[i]);
+                if (paths[i].length > 0 && this.element.fancytree('getTree').getNodeByKey(paths[i].substring(paths[i].lastIndexOf('/') + 1)) == null) {
                     showPaths.push(paths[i]);
                 }
             }
             if (DEBUG) log("loadKeyPath " + showPaths);
 
             if (paths !== null) {
-                if (showPaths.length == 0) {
+                if (showPaths.length == 0) { // all paths to show have already been loaded
                     var ret = this.element.fancytree('getTree').filterNodes(function (x) {
                         if (DEBUG) log("     filt:" + x.getKeyPath());
                         return $.inArray(x.getKeyPath(), paths) !== -1;
                         // unfortunately filterNodes does not implement a callback for when it is done AFAICT
                     }, {autoExpand: true});
                     if (DEBUG) log("filterNodes returned: " + ret);
+                    if (callback) callback();
                 }
-                else {
+                else { // need to load paths
                     this.loadKeyPath(this.element.fancytree("getTree"), showPaths,
                         function (node, state) {
                             if (DEBUG) log("Terminal callback");
@@ -595,7 +600,7 @@
                             } else if (state == "loaded") {
                                 if (DEBUG) log("loaded" + node);
                             } else if (state == "error") {
-                                console.error("ERROR: state was " + state + " for " + node);
+                                console.log("ERROR: state was " + state + " for " + node);
                             }
 
                         }
@@ -749,28 +754,6 @@
 
     });
 
-    //// A really lightweight plugin wrapper around the constructor,
-    //// preventing against multiple instantiations
-    //$.fn[pluginName] = function (options) {
-    //    return this.each(function () {
-    //        if (!$.data(this, "plugin_" + pluginName)) {
-    //            $.data(this, "plugin_" + pluginName, new KmapsTreePlugin(this, options));
-    //        }
-    //    });
-    //};
-
-    // here we are making functions available outside the plugin.
-
-    //$.fn[pluginName].loadKeyPath = function (path, func) {
-    //    this.loadKeyPath(path, function() {
-    //        if (DEBUG) log("loadKeyPath callback: " + path);
-    //        tree.filterNodes(function (node, func) {
-    //            var match = (node.getKeyPath() === path);
-    //            if (DEBUG) (match + " = " + node.getKeyPath() + " ? " + path);
-    //            return match;
-    //        });
-    //    });
-    //};
 
     // See https://github.com/jquery-boilerplate/jquery-boilerplate/wiki/Extending-jQuery-Boilerplate
     $.fn[pluginName] = function (options) {
