@@ -127,8 +127,8 @@
                     var theTitle = data.node.title;
                     var theCaption = data.node.data.caption;
                     var theIdPath = data.node.data.path;
-                    // decorateElementWithPopover(theElem, theKey,theTitle, theIdPath,theCaption );
-                    decorateElemWithDrupalAjax(theElem, theKey, theType);
+                    decorateElementWithPopover(theElem, theKey,theTitle, theIdPath,theCaption );
+                    //decorateElemWithDrupalAjax(theElem, theKey, theType);
                     return data;
                 },
                 renderNode: function (event, data) {
@@ -225,6 +225,7 @@
                         data.result.push(rootbin[x[i]]);
                     }
                     if (DEBUG) console.dir({log: "result", "data": data.result});
+                    //data.result.sortChildren();
                 },
 
                 lazyLoad: function (event, data) {
@@ -260,21 +261,25 @@
                 },
 
                 loadChildren: function (evt, ctx) {
-                    var startId = plugin.settings.termindex_root_id;
+                    if (DEBUG) { console.log("loadChildren..."); }
 
-                    if (startId) {
-                        //ctx.tree.activateKey(startId);
-                        var startNode = ctx.tree.getNodeByKey(startId);
-                        if (startNode) {
-                            //if (DEBUG) console.log("autoExpanding node: " + startNode.title + " (" + startNode.key + ")");
-                            try {
-                                startNode.setExpanded(true);
-                                startNode.makeVisible();
-                            } catch (e) {
-                                console.error("autoExpand failed: " + e.toString())
-                            }
-                        }
-                    }
+                    ctx.node.sortChildren(null,true);
+
+                    //var startId = plugin.settings.termindex_root_id;
+                    //if (startId) {
+                    //    //ctx.tree.activateKey(startId);
+                    //    var startNode = ctx.tree.getNodeByKey(startId);
+                    //    if (startNode) {
+                    //        //if (DEBUG) console.log("autoExpanding node: " + startNode.title + " (" + startNode.key + ")");
+                    //        try {
+                    //            console.log("auto-expanding");
+                    //            startNode.setExpanded(true);
+                    //            startNode.makeVisible();
+                    //        } catch (e) {
+                    //            console.error("autoExpand failed: " + e.toString())
+                    //        }
+                    //    }
+                    //}
                 }
 
             });
@@ -427,28 +432,28 @@
 
             function decorateElemWithDrupalAjax(theElem, theKey, theType) {
                 //if (DEBUG) console.log("decorateElementWithDrupalAjax: "  + $(theElem).html());
-                $(theElem).once('nav', function () {
-                    //if (DEBUG) console.log("applying click handling to " + $(this).html());
-                    var base = $(this).attr('id') || "ajax-wax-" + theKey;
-                    var argument = $(this).attr('argument');
-                    var url = location.origin + location.pathname.substring(0, location.pathname.indexOf(theType)) + theType + '/' + theKey + '/overview/nojs';
-
-                    var element_settings = {
-                        url: url,
-                        event: 'navigate',
-                        progress: {
-                            type: 'throbber'
-                        }
-                    };
-
-                    // if (DEBUG) console.log("Adding to ajax to " + base);
-
-                    Drupal.ajax[base] = new Drupal.ajax(base, this, element_settings);
-                    //this.click(function () {
-                    //    if (DEBUG) console.log("pushing state for " + url);
-                    //    window.history.pushState({tag: true}, null, url);
-                    //});
-                });
+                //$(theElem).once('nav', function () {
+                //    //if (DEBUG) console.log("applying click handling to " + $(this).html());
+                //    var base = $(this).attr('id') || "ajax-wax-" + theKey;
+                //    var argument = $(this).attr('argument');
+                //    var url = location.origin + location.pathname.substring(0, location.pathname.indexOf(theType)) + theType + '/' + theKey + '/overview/nojs';
+                //
+                //    var element_settings = {
+                //        url: url,
+                //        event: 'navigate',
+                //        progress: {
+                //            type: 'throbber'
+                //        }
+                //    };
+                //
+                //    // if (DEBUG) console.log("Adding to ajax to " + base);
+                //
+                //    Drupal.ajax[base] = new Drupal.ajax(base, this, element_settings);
+                //    //this.click(function () {
+                //    //    if (DEBUG) console.log("pushing state for " + url);
+                //    //    window.history.pushState({tag: true}, null, url);
+                //    //});
+                //});
             }
 
 
@@ -470,6 +475,7 @@
                 "&fl=header,id,ancestor_*,level_i" +
                 "&indent=true" +
                 "&fq=tree:" + type +
+                "&fq=ancestors_pol.admin.hier:*" +
                 "&fq=level_i:[" + lvla + "+TO+" + (lvlb + 1) + "]" +
                 "&fq={!tag=hoot}level_i:[" + lvla + "+TO+" + lvlb + "]" +
                 "&facet.mincount=2" +
@@ -542,7 +548,7 @@
 
             paths = $.map(paths, fixPath);
 
-            console.dir(paths);
+            if (DEBUG) { console.dir(paths); }
 
             var showPaths = [];
             for (var i = 0; i < paths.length; i++) {
