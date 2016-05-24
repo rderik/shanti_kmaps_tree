@@ -549,7 +549,7 @@
 
             // cleanup the paths
             paths = $.map(paths,fixPath);
-            paths = $.grep(paths, function(x) { console.dir(x); return (x !== "/") } )
+            paths = $.grep(paths, function(x) { return (x !== "/") } )
 
             if (DEBUG) { console.dir(paths); }
 
