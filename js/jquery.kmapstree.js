@@ -475,7 +475,8 @@
                 "&fl=header,id,ancestor_*,level_i" +
                 "&indent=true" +
                 "&fq=tree:" + type +
-                "&fq=ancestors_pol.admin.hier:*" +
+                // the following excludes subjects
+                // "&fq=ancestors_pol.admin.hier:*" +
                 "&fq=level_i:[" + lvla + "+TO+" + (lvlb + 1) + "]" +
                 "&fq={!tag=hoot}level_i:[" + lvla + "+TO+" + lvlb + "]" +
                 "&facet.mincount=2" +
