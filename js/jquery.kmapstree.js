@@ -13,8 +13,8 @@
     // as this (slightly) quickens the resolution process and can be more efficiently
     // minified (especially when both are regularly referenced in your plugin).
 
-    var SOLR_ROW_LIMIT = 2000;
-    var DEBUG = false;
+    var SOLR_ROW_LIMIT = 2000;  // Should be a setting. Can set to lower to speed up development.
+    var DEBUG = true;                    // Should be a setting. Turns on and off debug statements
 
     // Create the defaults once
     var pluginName = "kmapsTree",
@@ -96,7 +96,7 @@
                     url: plugin.buildQuery(plugin.settings.termindex_root, plugin.settings.type, plugin.settings.root_kmap_path, 1, plugin.settings.root_kmap_path.split('/').length)
                 },
 
-                // User Event Handlers
+                // User Event Handlers: That come from fancytree instance
                 select: function (event, data) {
                     plugin.sendEvent("SELECT", event, data);
                 },
@@ -157,7 +157,7 @@
                 },
 
                 postProcess: function (event, data) {
-                    log("postProcess!");
+                    log(plugin.settings.type + " postProcess!");
                     data.result = [];
 
                     var docs = data.response.response.docs;
@@ -176,7 +176,9 @@
                         var count = facet_counts[i + 1];
                         countbin[path] = (count - 1);
                     }
-
+                    
+                    //console.log("There are the facet counts: ", countbin);
+                    
                     for (var i = 0; i < docs.length; i++) {
                         var doc = docs[i];
                         var ancestorIdPath = docs[i].ancestor_id_path;
@@ -235,9 +237,11 @@
                     var path = data.node.data.path;
                     var termIndexRoot = plugin.settings.termindex_root;
                     var type = plugin.settings.type;
+                    var lazyquery = plugin.buildQuery(termIndexRoot, type, path, lvla, lvlb);
+                    if (DEBUG) 
                     data.result = {
-                        url: plugin.buildQuery(termIndexRoot, type, path, lvla, lvlb)
-                    }
+                        url: lazyquery
+                    };
                 },
 
                 glyph: {
@@ -304,7 +308,7 @@
                             },
                             trigger: 'hover',
                             placement: 'left',
-                            delay: {hide: 5},
+                            delay: {'hide': 1000},
                             container: 'body'
                         }
                     );
@@ -331,7 +335,7 @@
                                 countsElem.html("<i class='glyphicon glyphicon-warning-sign' title='" + e.statusText);
                             },
                             success: function (xml) {
-
+                                return;
                                 // force the counts to be evaluated as numbers.
                                 var related_count = Number($(xml).find('related_feature_count').text());
                                 var description_count = Number($(xml).find('description_count').text());
@@ -723,12 +727,14 @@
                     level: n.data.level,
                     parent: "/" + n.data.parent,
                     event: event
-                }
+                };
             }
 
             // log("HANDLER:  " + handler);
-            var kmapid = this.settings.type + "-" + data.node.key;
+            /* These lines cause an error and don't seem to be necessary: (ndg, 2016-06-10)
+             var kmapid = this.settings.type + "-" + data.node.key;
             var path = "/" + data.node.data.path;
+             */
             var origEvent = (event.originalEvent) ? event.originalEvent.type : "none";
             var keyCode = "";
             if (event.keyCode) {
