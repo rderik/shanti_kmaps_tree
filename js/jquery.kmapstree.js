@@ -93,7 +93,9 @@
                 cookieId: this.id,
                 idPrefix: this.id,
                 source: {
-                    url: plugin.buildQuery(plugin.settings.termindex_root, plugin.settings.type, plugin.settings.root_kmap_path, 1, plugin.settings.root_kmap_path.split('/').length)
+                    url: plugin.buildQuery(plugin.settings.termindex_root, plugin.settings.type, plugin.settings.root_kmap_path, 1, plugin.settings.root_kmap_path.split('/').length),
+                    dataType: 'jsonp',
+                    jsonp: 'json.wrf'
                 },
 
                 // User Event Handlers
@@ -236,7 +238,9 @@
                     var termIndexRoot = plugin.settings.termindex_root;
                     var type = plugin.settings.type;
                     data.result = {
-                        url: plugin.buildQuery(termIndexRoot, type, path, lvla, lvlb)
+                        url: plugin.buildQuery(termIndexRoot, type, path, lvla, lvlb),
+                        dataType: 'jsonp',
+                        jsonp: 'json.wrf'
                     }
                 },
 
@@ -364,12 +368,11 @@
                                     kmidxBase = 'http://kidx.shanti.virginia.edu/solr/kmindex';
                                     console.error("Drupal.settings.shanti_kmaps_admin.shanti_kmaps_admin_server_solr not defined. using default value: " + kmidxBase);
                                 }
-                                var solrURL = kmidxBase + '/select?q=kmapid:' + plugin.settings.type + '-' + key + project_filter + '&start=0&facets=on&group=true&group.field=asset_type&group.facet=true&group.ngroups=true&group.limit=0&wt=json';
+                                var solrURL = kmidxBase + '/select?q=kmapid:' + plugin.settings.type + '-' + key + project_filter + '&start=0&facets=on&group=true&group.field=asset_type&group.facet=true&group.ngroups=true&group.limit=0&wt=json&json.wrf=?';
                                 //if (debug) console.log ("solrURL = " + solrURL);
-                                $.get(solrURL, function (json) {
-                                    //if (DEBUG) console.log(json);
+                                $.get(solrURL, function (data) {
+                                    //if (DEBUG) console.log(data);
                                     var updates = {};
-                                    var data = JSON.parse(json);
                                     $.each(data.grouped.asset_type.groups, function (x, y) {
                                         var asset_type = y.groupValue;
                                         var asset_count = y.doclist.numFound;
@@ -377,7 +380,7 @@
                                     });
                                     // console.log(key + "(" + title + ") : " + JSON.stringify(updates));
                                     update_counts(countsElem, updates)
-                                });
+                                }, 'jsonp');
                             }
                         });
                     });
@@ -485,6 +488,7 @@
                 "&facet.sort=ancestor_id_path" +
                 "&facet.field={!ex=hoot}ancestor_id_path" +
                 "&wt=json" +
+                "&json.wrf=?" +
                 "&rows=" + SOLR_ROW_LIMIT;
 
             if (DEBUG) {
